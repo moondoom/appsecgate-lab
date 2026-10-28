@@ -1,0 +1,24 @@
+# Cline Rules — AppSecGate Lab
+
+Приоритет: этот файл → AGENTS.md → docs/mcp-scan-skill.md
+
+## Обязательный ритуал безопасности (MCP)
+
+Перед началом работы прочитай `docs/mcp-scan-skill.md` — там полный сценарий.
+Кратко:
+
+1. После правки любого файла → `appsecgate-lab__scan_file(path=<файл>)`
+2. Перед коммитом → `appsecgate-lab__scan_diff()`
+3. После завершения этапа → `appsecgate-lab__scan_project()`
+4. Находки critical/high → `get_fix_context` → правка → `verify_fix`
+5. Ложные срабатывания → `submit_feedback` с причиной
+
+Никаких локальных сканеров. Только MCP.
+
+## Работа с проектом
+
+- Все Python-команды через `uv run` из `agent/`
+- `make check` — lint + typecheck + test перед коммитом
+- `make up` / `make down` — docker compose
+- Тесты обязательны для normalize, MCP-парсера и Validator
+- Коммиты — Conventional Commits

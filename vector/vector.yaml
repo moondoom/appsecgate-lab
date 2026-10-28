@@ -1,0 +1,23 @@
+sources:
+  linux_audit:
+    type: file
+    include: ["/var/log/audit/audit.log"]
+    ignore_checkpoints: false
+
+transforms:
+  parse_audit:
+    type: remap
+    inputs: [linux_audit]
+    source: |
+      . = parse_key_value!(.message)
+      .timestamp = parse_timestamp!(.msg, "%s.%3f") ?? now()
+      .source_host = get_env_var!("VECTOR_SOURCE_HOST") ?? "neighbor-host-01"
+
+sinks:
+  clickhouse_audit:
+    type: clickhouse
+    inputs: [parse_audit]
+    endpoint: http://clickhouse:8123
+    database: security_logs
+    table: audit_events
+    skip_unknown_fields: true

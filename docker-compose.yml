@@ -1,0 +1,192 @@
+networks:
+  llm-net:
+    driver: bridge
+
+volumes:
+  clickhouse-data:
+  grafana-data:
+  prometheus-data:
+
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    restart: unless-stopped
+    ports: ["4000:4000"]
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "8123"
+      CLICKHOUSE_DATABASE: litellm
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      LITELLM_OTEL_V2: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [llm-net]
+    depends_on:
+      clickhouse: { condition: service_healthy }
+      otel-collector: { condition: service_started }
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    restart: unless-stopped
+    ports: ["16686:16686"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks: [llm-net]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    restart: unless-stopped
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./otel/config.yaml:/etc/otelcol/config.yaml:ro
+    networks: [llm-net]
+    depends_on:
+      - jaeger
+      - clickhouse
+
+  presidio-analyzer:
+    image: mcr.microsoft.com/presidio-analyzer:latest
+    container_name: presidio-analyzer
+    restart: unless-stopped
+    ports: ["5002:5001"]
+    environment:
+      PORT: "5001"
+    networks: [llm-net]
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: litellm
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_DEFAULT_PASS}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse/init:/docker-entrypoint-initdb.d:ro
+    networks: [llm-net]
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    networks: [llm-net]
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    ports: ["9100:9100"]
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+    networks: [llm-net]
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    privileged: true
+    networks: [llm-net]
+
+  nvidia-gpu-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:latest
+    container_name: nvidia-gpu-exporter
+    restart: unless-stopped
+    profiles: [gpu]
+    ports: ["9835:9835"]
+    volumes:
+      - /usr/bin/nvidia-smi:/usr/bin/nvidia-smi:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks: [llm-net]
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASS}
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+    networks: [llm-net]
+    depends_on: [prometheus, clickhouse]
+
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: vector
+    restart: unless-stopped
+    profiles: [audit]
+    volumes:
+      - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - /var/log/audit:/var/log/audit:ro
+    networks: [llm-net]
+    depends_on:
+      - clickhouse
+
+  agent-observer:
+    build: ./agent
+    container_name: agent-observer
+    restart: unless-stopped
+    ports: ["9101:9101"]
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_READER_USER: agent_reader
+      CLICKHOUSE_READER_PASS: ${AGENT_READER_PASS}
+      CLICKHOUSE_WRITER_USER: agent_writer
+      CLICKHOUSE_WRITER_PASS: ${AGENT_WRITER_PASS}
+      LITELLM_BASE_URL: http://litellm:4000
+      LITELLM_API_KEY: ${LITELLM_AGENT_KEY}
+      AGENT_MODEL: ${AGENT_MODEL}
+      OBSERVER_INTERVAL_SEC: "300"
+      CORRELATOR_INTERVAL_SEC: "60"
+      RULE_ENGINE_INTERVAL_SEC: "3600"
+    networks: [llm-net]
+    depends_on:
+      clickhouse: { condition: service_healthy }

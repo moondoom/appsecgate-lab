@@ -1,0 +1,12 @@
+model_list:
+  - model_name: gemma-4-26b
+    litellm_params:
+      model: ollama/gemma4:26b
+      api_base: http://host.docker.internal:11434
+
+litellm_settings:
+  success_callback: ["clickhouse", "otel"]
+  failure_callback: ["clickhouse", "otel"]
+
+general_settings:
+  otel: true
