@@ -3,7 +3,7 @@
 Подкоманды:
 
 * ``load-rules DIR``  — загрузить статические правила из ``DIR/*.sql`` в ``alert_rules``;
-* ``observe``         — один проход Observer (spend_logs -> asset_proposals);
+* ``observe``         — один проход Observer (витрины security_logs -> asset_proposals);
 * ``correlate``       — один проход Correlator (правила -> alert_incidents);
 * ``propose``         — Rule-Engine: сгенерировать rule_proposals через хост-LiteLLM;
 * ``promote ID``      — промоутить approved rule_proposal в alert_rules;
