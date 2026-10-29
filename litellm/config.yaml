@@ -1,12 +1,69 @@
+# Провайдеры и ключи настраиваются через .env (см. .env.example).
+# Формат "os.environ/VAR" — LiteLLM читает значение из окружения контейнера.
+#
+# Имена моделей для клиентов:
+#   ollama/<model>   -> Ollama ($OLLAMA_API_BASE)
+#   p/<model> -> PROXYAPI (OpenAI-compatible)
+#   a/<model> -> AITUNNEL (OpenAI-compatible)
+
 model_list:
-  - model_name: gemma-4-26b
+  - model_name: "ollama/glm-4.7-flash:latest"
     litellm_params:
-      model: ollama/gemma4:26b
-      api_base: http://host.docker.internal:11434
+      model: "ollama/glm-4.7-flash:latest"
+      api_base: "os.environ/OLLAMA_API_BASE"
+    model_info:
+      input_cost_per_token: 0.0000001
+      output_cost_per_token: 0.0000002
+
+  - model_name: "p/deepseek-v4-flash"
+    litellm_params:
+      model: "openai/deepseek/deepseek-v4-flash-0731"
+      api_base: "os.environ/OAI_PROVIDER_1_API_BASE"
+      api_key: "os.environ/OAI_PROVIDER_1_API_KEY"
+    model_info:
+      # При необходимости задайте стоимость вручную, чтобы spend в ClickHouse был корректным
+      input_cost_per_token: 0.0000006   # 60 ₽ за 1M токенов (примерный пересчёт)
+      output_cost_per_token: 0.0000018  # 180 ₽ за 1M токенов
+
+  - model_name: "a/deepseek-v4-flash"
+    litellm_params:
+      model: "openai/deepseek-v4-flash-0731"
+      api_base: "os.environ/OAI_PROVIDER_2_API_BASE"
+      api_key: "os.environ/OAI_PROVIDER_2_API_KEY"
+    model_info:
+      # Стоимость можно не указывать, если она есть во встроенной карте LiteLLM
+      # Но для гарантии корректного spend в ClickHouse лучше задать явно
+      input_cost_per_token: 0.0000006
+      output_cost_per_token: 0.0000018
 
 litellm_settings:
-  success_callback: ["clickhouse", "otel"]
+  success_callback: ["clickhouse", "otel", "prometheus"]
   failure_callback: ["clickhouse", "otel"]
+  # /metrics без auth — Prometheus скрейпит без ключа (с v1.85.0 по умолчанию требует ключ)
+  require_auth_for_metrics_endpoint: false
+  store_prompts_in_spend_logs: true
 
 general_settings:
   otel: true
+  # Аутентификация прокси включена — LITELLM_MASTER_KEY подставляется из .env
+  # (в docker-compose это переменная LITELLM_API_KEY). Без Postgres virtual keys
+  # не работают, поэтому agent-observer ходит под тем же master key.
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+guardrails:
+  - guardrail_name: "presidio-pii-mask"
+    litellm_params:
+      guardrail: presidio
+      mode: "pre_call" # Проверять входящие запросы
+      presidio_language: "en"
+      pii_entities_config:
+        CREDIT_CARD: "MASK"
+        EMAIL_ADDRESS: "MASK"
+        PHONE_NUMBER: "MASK"
+        PERSON: "MASK"
+        US_SSN: "MASK"
+      # Опционально: порог уверенности для каждого типа сущности
+      presidio_score_thresholds:
+        CREDIT_CARD: 0.8
+        EMAIL_ADDRESS: 0.6
+    default_on: true # Включить для всех запросов

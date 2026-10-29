@@ -3,24 +3,31 @@
 
 -- Извлечение URL репозитория из аргументов git-команды
 CREATE OR REPLACE FUNCTION extractRepoUrl AS (args) ->
-    extractAll(
-        extractAll(args, '(?:git@|https?://|ssh://)[^\\s]+'),  -- сначала найти что-то похожее на URL
-        '(?:https?://|ssh://(?:[^@]+@)?|git@)[^\\s]+'          -- уточнить паттерн
-    )[1] ?? '';                                                 -- взять первое совпадение или пустую строку
+    ifNull(
+        extractAll(
+            extractAll(args, '(?:git@|https?://|ssh://)[^\\s]+')[1],  -- первый URL-кандидат
+            '(?:https?://|ssh://(?:[^@]+@)?|git@)[^\\s]+'              -- уточнить паттерн
+        )[1],                                                          -- первое совпадение
+        ''                                                             -- или пустую строку
+    );
 
 -- Нормализация URL репозитория
+-- https://host/path.git  |  git@host:path.git (scp)  |  ssh://git@host/path.git
 CREATE OR REPLACE FUNCTION normalizeRepoUrl AS (url) ->
     replaceRegexpAll(
         replaceRegexpAll(
-            lowerASCII(trim(TRAILING '.' FROM replaceAll(url, 'git@', 'https://'))),
-            '\\.git$', ''
+            replaceRegexpAll(
+                lower(trim(TRAILING '.' FROM url)),
+                '^ssh://[^@]+@', 'https://'
+            ),
+            '^git@([^:]+):', 'https://\\1/'
         ),
-        '^ssh://[^@]+@', 'https://'
+        '\\.git$', ''
     );
 
 -- Извлечение ключа БД из аргументов tool call
 CREATE OR REPLACE FUNCTION extractDbKey AS (args) ->
-    extractAll(
-        extractAll(args, '(?:host|server|endpoint)[=:][\\w.-]+'), -- найти host/server/endpoint
-        '(?i)(?:host|server|endpoint)[=:]([\\w.-]+)'              -- захватить значение
-    )[1] ?? '';
+    ifNull(
+        extractAllGroupsHorizontal(args, '(?i)(?:host|server|endpoint)[=:]([\\w.-]+)')[1][1],
+        ''
+    );

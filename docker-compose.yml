@@ -12,17 +12,31 @@ services:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: litellm
     restart: unless-stopped
-    ports: ["4000:4000"]
+    ports: ["4000:4000", "4001:4001"]
     volumes:
       - ./litellm/config.yaml:/app/config.yaml:ro
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     environment:
-      CLICKHOUSE_HOST: clickhouse
-      CLICKHOUSE_PORT: "8123"
+      # --- Явные переменные для ClickHouse (рекомендуемый способ) ---
       CLICKHOUSE_DATABASE: litellm
+      # Альтернатива явным переменным — CLICKHOUSE_URL:
+      # CLICKHOUSE_URL: http://default:${CLICKHOUSE_DEFAULT_PASS}@clickhouse:8123
+      CLICKHOUSE_FLUSH_INTERVAL_SECONDS: 2.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: "span_only"
       LITELLM_OTEL_V2: "true"
+      PROMETHEUS_METRICS_PORT: "4001"
+      # Провайдеры — значения берутся из .env (см. .env.example)
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE}
+      OAI_PROVIDER_1_API_BASE: ${OAI_PROVIDER_1_API_BASE}
+      OAI_PROVIDER_1_API_KEY: ${OAI_PROVIDER_1_API_KEY}
+      OAI_PROVIDER_2_API_BASE: ${OAI_PROVIDER_2_API_BASE}
+      OAI_PROVIDER_2_API_KEY: ${OAI_PROVIDER_2_API_KEY}
+      LITELLM_MASTER_KEY: ${LITELLM_API_KEY}   # включить вместе с master_key в config.yaml
+      PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
+      PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks: [llm-net]
@@ -48,6 +62,7 @@ services:
       - "4318:4318"
     volumes:
       - ./otel/config.yaml:/etc/otelcol/config.yaml:ro
+    command: ["--config", "/etc/otelcol/config.yaml"]
     networks: [llm-net]
     depends_on:
       - jaeger
@@ -57,9 +72,20 @@ services:
     image: mcr.microsoft.com/presidio-analyzer:latest
     container_name: presidio-analyzer
     restart: unless-stopped
-    ports: ["5002:5001"]
+    ports:
+      - "5002:3000" # Пробрасываем на хост для отладки, внутри сети будет 3000
     environment:
-      PORT: "5001"
+      - PORT=3000 # По умолчанию Presidio Analyzer слушает 3000
+    networks: [llm-net]
+
+  presidio-anonymizer:
+    image: mcr.microsoft.com/presidio-anonymizer:latest
+    container_name: presidio-anonymizer
+    restart: unless-stopped
+    ports:
+      - "5001:3000"
+    environment:
+      - PORT=3000
     networks: [llm-net]
 
   clickhouse:
@@ -155,6 +181,7 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASS}
       GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+      GRAFANA_CH_PASS: ${GRAFANA_CH_PASS}
     networks: [llm-net]
     depends_on: [prometheus, clickhouse]
 
@@ -190,3 +217,31 @@ services:
     networks: [llm-net]
     depends_on:
       clickhouse: { condition: service_healthy }
+
+  clickhouse-mcp:
+    image: mcp/clickhouse:latest
+    container_name: clickhouse-mcp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # --- Подключение к ClickHouse ---
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "8123"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_DEFAULT_PASS}
+      CLICKHOUSE_DATABASE: litellm
+      CLICKHOUSE_MCP_AUTH_TOKEN: ${CLICKHOUSE_DEFAULT_PASS}
+      CLICKHOUSE_MCP_BIND_HOST: 0.0.0.0
+      CLICKHOUSE_SECURE: "false"
+      # --- Настройка MCP-сервера ---
+      # Включаем HTTP-транспорт (Streamable HTTP)
+      CLICKHOUSE_MCP_SERVER_TRANSPORT: "http"
+      # Аутентификация включена через CLICKHOUSE_MCP_AUTH_TOKEN.
+      # Для локальной отладки без auth можно раскомментировать:
+      # CLICKHOUSE_MCP_AUTH_DISABLED: "true"
+    networks:
+      - llm-net
+    depends_on:
+      clickhouse:
+        condition: service_healthy

@@ -9,9 +9,10 @@ datasources:
 
   - name: ClickHouse
     type: grafana-clickhouse-datasource
-    access: proxy
-    url: http://clickhouse:8123
     jsonData:
+      host: clickhouse
+      port: 9000
+      protocol: native
       defaultDatabase: security_logs
       username: grafana
     secureJsonData:
