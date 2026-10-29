@@ -23,3 +23,4 @@ WHERE e.exe LIKE '%git%push%'
   AND e.timestamp >= now() - INTERVAL 5 MINUTE
   AND a.asset_id IS NULL
 ORDER BY e.timestamp DESC
+SETTINGS join_use_nulls = 1

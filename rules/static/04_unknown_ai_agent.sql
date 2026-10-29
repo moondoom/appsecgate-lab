@@ -16,3 +16,4 @@ WHERE a.asset_id IS NULL
 GROUP BY t.agent_name
 HAVING calls > 5
 ORDER BY calls DESC
+SETTINGS join_use_nulls = 1

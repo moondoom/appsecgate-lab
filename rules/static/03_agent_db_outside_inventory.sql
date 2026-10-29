@@ -19,3 +19,4 @@ WHERE a.asset_id IS NULL
   AND t.tool_name IN ('query_database', 'psql', 'mysql', 'mongo_query')
   AND t.timestamp >= now() - INTERVAL 10 MINUTE
 ORDER BY t.timestamp DESC
+SETTINGS join_use_nulls = 1
