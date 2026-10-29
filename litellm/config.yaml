@@ -51,6 +51,13 @@ general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
 
 guardrails:
+
+  - guardrail_name: "hide-secrets"
+    litellm_params:
+      guardrail: hide_secrets   # ← встроенный guardrail
+      mode: "pre_call"
+      default_on: true
+    
   - guardrail_name: "presidio-pii-mask"
     litellm_params:
       guardrail: presidio
@@ -58,12 +65,8 @@ guardrails:
       presidio_language: "en"
       pii_entities_config:
         CREDIT_CARD: "MASK"
-        EMAIL_ADDRESS: "MASK"
-        PHONE_NUMBER: "MASK"
-        PERSON: "MASK"
-        US_SSN: "MASK"
-      # Опционально: порог уверенности для каждого типа сущности
+
       presidio_score_thresholds:
         CREDIT_CARD: 0.8
         EMAIL_ADDRESS: 0.6
-    default_on: true # Включить для всех запросов
+      default_on: true # Включить для всех запросов
