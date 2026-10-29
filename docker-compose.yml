@@ -17,10 +17,11 @@ services:
       - ./litellm/config.yaml:/app/config.yaml:ro
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     environment:
-      # --- Явные переменные для ClickHouse (рекомендуемый способ) ---
+      # --- ClickHouse для spend-логов ---
+      # В текущих версиях LiteLLM CLICKHOUSE_URL обязателен (rust_bridge:
+      # spend_storage_config читает только CLICKHOUSE_URL и CLICKHOUSE_DATABASE).
+      CLICKHOUSE_URL: http://default:${CLICKHOUSE_DEFAULT_PASS}@clickhouse:8123
       CLICKHOUSE_DATABASE: litellm
-      # Альтернатива явным переменным — CLICKHOUSE_URL:
-      # CLICKHOUSE_URL: http://default:${CLICKHOUSE_DEFAULT_PASS}@clickhouse:8123
       CLICKHOUSE_FLUSH_INTERVAL_SECONDS: 2.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_INSECURE: "true"
