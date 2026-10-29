@@ -67,9 +67,9 @@ Default ports:
 ├── agent/                  # Python agent (uv, Python 3.12)
 │   ├── src/agent/          # cli, config, db, metrics, observer/normalize
 │   └── tests/              # pytest (normalization and more)
-├── clickhouse/init/        # 7 SQL scripts: DBs, users, tables, functions, rules
+├── clickhouse/init/        # 8 SQL scripts: DBs, users, tables, functions, rules, derived views
 ├── litellm/ otel/ prometheus/ vector/ grafana/   # service configs
-├── rules/static/           # 5 static SQL correlation rules
+├── rules/static/           # 10 static SQL correlation rules
 ├── docs/                   # decisions.md, MCP skill
 └── docker-compose.yml      # 12 services
 ```

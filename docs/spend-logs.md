@@ -189,17 +189,37 @@ model=ollama/gemma4:26b` — ровно кейс решения №19 (gemma4:26
 
 - **Пишет**: только LiteLLM (rust-bridge) под пользователем из `CLICKHOUSE_URL`
   (`default`). Агент в неё писать не может и не должен.
-- **Читает**: Observer (`agent/src/agent/observer/observer.py`) через `agent_reader`:
+- **Читает**: Observer (`agent/src/agent/observer/observer.py`) через `agent_reader`
+  — только производные витрины `security_logs.*` (`08_derived_views.sql`),
+  напрямую в `litellm.spend_logs` не ходит (тяжёлая колонка `messages`):
 
   ```sql
-  SELECT start_time, user, end_user, api_base, model, status
-  FROM litellm.spend_logs
-  WHERE start_time >= now() - INTERVAL 30 MINUTE
+  -- 1. spend_logs_extended: 1:1 со spend_logs + вычисляемые поля
+  SELECT timestamp, user_id, end_user, api_base, model, model_group,
+         custom_llm_provider, tool_calls_count, guardrails_count,
+         requester_ip, user_agent
+  FROM security_logs.spend_logs_extended
+  WHERE timestamp >= now() - INTERVAL 30 MINUTE
+
+  -- 2. events_tool_calls: сгруппированные вызовы инструментов
+  SELECT tool_name, user_id, model, uniq(request_id) AS calls
+  FROM security_logs.events_tool_calls
+  WHERE timestamp >= now() - INTERVAL 30 MINUTE
+  GROUP BY tool_name, user_id, model
+
+  -- 3. events_guardrails: сгруппированные срабатывания гардрейлов
+  SELECT guardrail_name, guardrail_provider, guardrail_mode, action,
+         uniq(request_id) AS firings
+  FROM security_logs.events_guardrails
+  WHERE timestamp >= now() - INTERVAL 30 MINUTE
+  GROUP BY guardrail_name, guardrail_provider, guardrail_mode, action
   ```
 
   Затем `extract_candidates` мапит: `api_base` → актив `external_api`,
-  `user` → `ai_agent`, `end_user` → `user`, и пишет в `security_logs.asset_proposals`
-  (права `agent_writer`, решение №16).
+  `user_id` → `ai_agent`, `end_user` → `user`, `tool_name` → `tool`,
+  `guardrail_name` → `guardrail`, и пишет в `security_logs.asset_proposals`
+  (права `agent_writer`, решение №16). Коррелятор прогоняет статические правила
+  01–10; правила 06–10 читают те же витрины `security_logs.*`.
 
 ## 8. Нюансы и зоны риска (для размышления)
 
