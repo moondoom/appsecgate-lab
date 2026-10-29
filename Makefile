@@ -9,7 +9,7 @@ UV       := uv --project $(AGENT_DIR)
         up up-gpu down clean ps logs config \
         ch-init ch-shell ch-ensure up-full \
         load-rules observe correlate propose promote serve \
-        smoke
+        dashboards smoke
 
 help: ## Показать эту справку
 	@awk 'BEGIN {FS = ":.*##"; printf "\nЦели:\n"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -107,3 +107,6 @@ up-full: up ch-init ch-ensure ## Start stack + init CH + ensure schema
 
 smoke: ## End-to-end smoke test
 	bash scripts/smoke.sh
+
+dashboards: ## Regenerate Grafana dashboards (scripts/gen_dashboards.py)
+	python3 scripts/gen_dashboards.py

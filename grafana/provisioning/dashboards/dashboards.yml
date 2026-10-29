@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  # Дашборды AppSecGate (JSON генерируются скриптом scripts/gen_dashboards.py).
+  - name: AppSecGate
+    orgId: 1
+    folder: AppSecGate
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

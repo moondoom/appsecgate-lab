@@ -57,6 +57,7 @@ Default ports:
 | `make observe` / `correlate` / `propose` | single-run agent modules |
 | `make promote ID=<uuid>` | promote approved proposal into `alert_rules` |
 | `make serve` | scheduled agent loop (observer/correlator/rule-engine) |
+| `make dashboards` | regenerate Grafana dashboard JSONs (`scripts/gen_dashboards.py`) |
 | `make smoke` | end-to-end stack check |
 | `make check` | ruff + mypy + pytest before commit |
 
@@ -73,6 +74,25 @@ Default ports:
 ├── docs/                   # decisions.md, MCP skill
 └── docker-compose.yml      # 12 services
 ```
+
+## Dashboards (Grafana)
+
+Two provisioned dashboards live in the **AppSecGate** folder
+(`grafana/provisioning/dashboards/`, auto-reloaded every 30 s):
+
+| Dashboard | What it shows |
+| :--- | :--- |
+| **Агент: контроль действий** | LLM-запросы (статусы, стоимость, токены, TTFT p95), инструменты, гардрейлы, инциденты + маленькие бейджи Prometheus-метрик агента |
+| **Сырые данные из view** | Полные строки таблиц `security_logs.*`: запросы, tool calls, guardrails, инциденты, активы и предложения — с фильтрами |
+
+JSON генерируются `scripts/gen_dashboards.py` (только stdlib, только `SELECT`):
+
+```bash
+make dashboards      # перегенерировать JSON
+docker compose restart grafana   # при первом добавлении провайдера
+```
+
+Grafana → http://localhost:3000, папка **AppSecGate**.
 
 ## Security: MCP only
 
