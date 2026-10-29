@@ -55,6 +55,8 @@ Default ports:
 | `make ch-init` / `ch-shell` | ClickHouse: init scripts, client |
 | `make load-rules` | load static rules into `alert_rules` |
 | `make observe` / `correlate` / `propose` | single-run agent modules |
+| `make promote ID=<uuid>` | promote approved proposal into `alert_rules` |
+| `make serve` | scheduled agent loop (observer/correlator/rule-engine) |
 | `make smoke` | end-to-end stack check |
 | `make check` | ruff + mypy + pytest before commit |
 

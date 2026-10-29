@@ -18,4 +18,9 @@
 | 13 | otel-collector — явный `command: ["--config", "/etc/otelcol/config.yaml"]` | Образ `otel/opentelemetry-collector-contrib` по умолчанию читает `/etc/otelcol-contrib/config.yaml` (дефолтный), наш конфиг не применялся |
 | 14 | `make ch-ensure` вызывает `ensure_schema()` вручную через python | Rust bridge не вызывает `ensure_schema` при инициализации; без таблицы `spend_logs` insert падает с HTTP 404 |
 | 15 | Для proxyapi/aitunnel провайдер задаётся префиксом `openai/` в `model` | По докам LiteLLM для OpenAI-compatible достаточно `openai/<model>` + `api_base`; `custom_llm_provider` не требуется |
+| 16 | Observer пишет в `asset_proposals`, а не в `assets` | Права `agent_*` не включают INSERT на `assets` (только vector/otel); agent_writer имеет INSERT на `asset_proposals` |
+| 17 | `rule_proposals`/`asset_proposals`: ORDER BY `(proposal_id)` вместо `(status, created_at)` | `(status, created_at)` схлопывал батч-вставки одной секунды (ReplacingMergeTree, FINAL терял строки) |
+| 18 | Решение 2 не реализовано: OTel-экспорт в otel_traces отсутствует; LiteLLM пишет `litellm.spend_logs` напрямую, Observer читает её | Наблюдаемость на стенде: spend_logs — единственный реальный источник; отдельного пайплайна трасс нет |
+| 19 | `AGENT_MODEL` в .env: `p/deepseek-v4-flash` (не `ollama/gemma4:26b`) | gemma4:26b не зарегистрирована в прокси; glm-4.7-flash отдаёт контент только в `reasoning_content`. В rule_engine добавлен фолбэк `content or reasoning_content` |
+| 20 | sqlglot-Validator: select-only, whitelist `security_logs.*`/`system.*`, blacklist `file`/`url`/`s3`/`remote` и др. | AGENTS.md: весь SQL правил обязан проходить валидацию до попадания в `alert_rules`; проверка по AST, не по строке |
 

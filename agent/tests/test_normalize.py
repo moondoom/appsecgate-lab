@@ -1,11 +1,19 @@
 """Тесты для normalize.py."""
 
-from agent.observer.normalize import extract_db_key, extract_repo_url, make_asset_key, normalize_repo_url
+from agent.observer.normalize import (
+    extract_db_key,
+    extract_repo_url,
+    make_asset_key,
+    normalize_repo_url,
+)
 
 
 class TestExtractRepoUrl:
     def test_https(self) -> None:
-        assert extract_repo_url("git clone https://github.com/org/repo.git") == "https://github.com/org/repo.git"
+        assert (
+            extract_repo_url("git clone https://github.com/org/repo.git")
+            == "https://github.com/org/repo.git"
+        )
 
     def test_ssh(self) -> None:
         assert extract_repo_url("git@github.com:org/repo.git") == "git@github.com:org/repo.git"
@@ -19,7 +27,9 @@ class TestNormalizeRepoUrl:
         assert normalize_repo_url("git@github.com:Org/Repo.git") == "https://github.com/org/repo"
 
     def test_https(self) -> None:
-        assert normalize_repo_url("https://github.com/org/repo.git") == "https://github.com/org/repo"
+        assert (
+            normalize_repo_url("https://github.com/org/repo.git") == "https://github.com/org/repo"
+        )
 
     def test_ssh_protocol(self) -> None:
         assert normalize_repo_url("ssh://git@github.com/org/repo") == "https://github.com/org/repo"

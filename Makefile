@@ -8,7 +8,7 @@ UV       := uv --project $(AGENT_DIR)
 .PHONY: help init sync lock lint fmt typecheck test test-validator check \
         up up-gpu down clean ps logs config \
         ch-init ch-shell ch-ensure up-full \
-        load-rules observe correlate propose promote \
+        load-rules observe correlate propose promote serve \
         smoke
 
 help: ## Показать эту справку
@@ -96,6 +96,9 @@ propose: ## Run Rule-Engine once
 
 promote: ## Promote rule (ID=<uuid>)
 	$(UV) run python -m agent.cli promote $(ID)
+
+serve: ## Run scheduled agent (observer+correlator+rule-engine)
+	$(UV) run python -m agent.cli serve
 
 ch-ensure: ## Ensure ClickHouse schema (spend_logs, etc.)
 	$(COMPOSE) exec -T litellm python3 -c "import asyncio; from litellm.rust_bridge.clickhouse import ClickHouseSpendStorage, spend_storage_config; s=ClickHouseSpendStorage(spend_storage_config()); asyncio.run(s.ensure_schema()); print('spend_logs schema ensured')"

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS security_logs.rule_proposals (
     reviewed_at     Nullable(DateTime),
     reviewed_by     LowCardinality(String) DEFAULT ''
 ) ENGINE = ReplacingMergeTree(updated_at)
-ORDER BY (status, created_at);
+ORDER BY (proposal_id);  -- ключ уникален: (status, created_at) схлопывал батч-вставки одной секунды
 
 -- Предложения по активам
 CREATE TABLE IF NOT EXISTS security_logs.asset_proposals (
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS security_logs.asset_proposals (
     updated_at      DateTime DEFAULT now(),
     reviewed_at     Nullable(DateTime)
 ) ENGINE = ReplacingMergeTree(updated_at)
-ORDER BY (status, created_at);
+ORDER BY (proposal_id);  -- ключ уникален: (status, created_at) схлопывал батч-вставки одной секунды
 
 -- Память агента (отклонённые идеи, выученные паттерны)
 CREATE TABLE IF NOT EXISTS security_logs.agent_memory (
