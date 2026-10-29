@@ -7,7 +7,7 @@ UV       := uv --project $(AGENT_DIR)
 
 .PHONY: help init sync lock lint fmt typecheck test test-validator check \
         up up-gpu down clean ps logs config \
-        ch-init ch-shell \
+        ch-init ch-shell ch-ensure up-full \
         load-rules observe correlate propose promote \
         smoke
 
@@ -26,21 +26,21 @@ lock: ## uv lock
 	$(UV) lock
 
 lint: ## ruff check + format
-	$(UV) run ruff check src
-	$(UV) run ruff format --check src
+	cd $(AGENT_DIR) && uv run ruff check src
+	cd $(AGENT_DIR) && uv run ruff format --check src
 
 fmt: ## ruff format + fix
-	$(UV) run ruff format src
-	$(UV) run ruff check --fix src
+	cd $(AGENT_DIR) && uv run ruff format src
+	cd $(AGENT_DIR) && uv run ruff check --fix src
 
 typecheck: ## mypy
-	$(UV) run mypy src
+	cd $(AGENT_DIR) && uv run mypy src
 
 test: ## pytest
-	$(UV) run pytest -q --tb=short
+	cd $(AGENT_DIR) && uv run pytest -q --tb=short
 
 test-validator: ## Only Validator tests
-	$(UV) run pytest -q --tb=short -k validator
+	cd $(AGENT_DIR) && uv run pytest -q --tb=short -k validator
 
 check: lint typecheck test ## Full check (lint + typecheck + test)
 
@@ -71,10 +71,12 @@ config: ## Validate docker-compose.yml
 	$(COMPOSE) config -q
 	@echo "  -> config valid"
 
-ch-init: ## Apply init scripts
+ch-init: ## Apply init scripts (env vars from .env are substituted)
+	@test -f ./.env || { echo "  -> .env not found; run 'make init' first"; exit 1; }
 	@for f in clickhouse/init/*.sql; do \
 		echo "-> $$f"; \
-		cat $$f | $(COMPOSE) exec -T clickhouse clickhouse-client --multiquery; \
+		set -a; . ./.env; set +a; \
+		envsubst < $$f | $(COMPOSE) exec -T clickhouse clickhouse-client --multiquery; \
 	done
 
 ch-shell: ## Connect to ClickHouse
@@ -94,6 +96,11 @@ propose: ## Run Rule-Engine once
 
 promote: ## Promote rule (ID=<uuid>)
 	$(UV) run python -m agent.cli promote $(ID)
+
+ch-ensure: ## Ensure ClickHouse schema (spend_logs, etc.)
+	$(COMPOSE) exec -T litellm python3 -c "import asyncio; from litellm.rust_bridge.clickhouse import ClickHouseSpendStorage, spend_storage_config; s=ClickHouseSpendStorage(spend_storage_config()); asyncio.run(s.ensure_schema()); print('spend_logs schema ensured')"
+
+up-full: up ch-init ch-ensure ## Start stack + init CH + ensure schema
 
 smoke: ## End-to-end smoke test
 	bash scripts/smoke.sh
