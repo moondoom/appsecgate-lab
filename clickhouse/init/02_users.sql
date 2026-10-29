@@ -37,6 +37,14 @@ GRANT INSERT ON security_logs.agent_memory TO agent_promoter;
 GRANT CREATE VIEW ON security_logs.* TO agent_promoter;
 GRANT SELECT ON security_logs.* TO agent_promoter;
 
+-- agent_asset_promoter — промоушен активов (только INSERT в assets,
+-- не расширяет права существующих agent_*; симметрично agent_promoter)
+CREATE USER IF NOT EXISTS agent_asset_promoter IDENTIFIED BY '${AGENT_ASSET_PROMOTER_PASS}';
+ALTER USER IF EXISTS agent_asset_promoter IDENTIFIED BY '${AGENT_ASSET_PROMOTER_PASS}';
+GRANT INSERT ON security_logs.assets TO agent_asset_promoter;
+GRANT SELECT ON security_logs.assets TO agent_asset_promoter;
+GRANT SELECT ON security_logs.asset_proposals TO agent_asset_promoter;
+
 -- vector — приём auditd
 CREATE USER IF NOT EXISTS vector IDENTIFIED BY '${VECTOR_PASS}';
 ALTER USER IF EXISTS vector IDENTIFIED BY '${VECTOR_PASS}';

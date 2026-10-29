@@ -35,3 +35,13 @@ def get_promoter() -> clickhouse_connect.driver.Client:
         password=settings.clickhouse_promoter_pass,
         database="security_logs",
     )
+
+
+def get_asset_promoter() -> clickhouse_connect.driver.Client:
+    """Клиент для промоушена активов (INSERT только в assets)."""
+    return clickhouse_connect.get_client(
+        host=settings.clickhouse_host,
+        user=settings.clickhouse_asset_promoter_user,
+        password=settings.clickhouse_asset_promoter_pass,
+        database="security_logs",
+    )

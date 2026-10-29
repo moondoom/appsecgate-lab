@@ -36,6 +36,7 @@ validator_rejections = Counter(
 
 # Promoter
 promoted_rules = Counter("agent_promoted_rules_total", "Промоутированные правила")
+promoted_assets = Counter("agent_promoted_assets_total", "Промоутированные активы")
 
 # Gauges
 active_rules = Gauge("agent_active_rules", "Активные правила", ["severity"])

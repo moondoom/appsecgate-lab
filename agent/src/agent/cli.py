@@ -20,7 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from agent.config import settings
-from agent.db import get_promoter, get_reader, get_writer
+from agent.db import get_asset_promoter, get_promoter, get_reader, get_writer
 from agent.metrics import active_rules, validator_rejections
 from agent.validator import extract_severity, validate_sql
 
@@ -210,11 +210,21 @@ def cmd_promote(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_approve_assets(_args: argparse.Namespace) -> int:
+    """Перенести готовые asset_proposals в assets (approved + авто по порогу)."""
+    from agent.asset_promoter import promote_once
+
+    stats = promote_once(get_reader(), get_writer(), get_asset_promoter())
+    print(f"approve-assets: {stats}")
+    return 0
+
+
 def cmd_serve(_args: argparse.Namespace) -> int:
     """Планировщик APScheduler: observer / correlator / rule-engine по интервалам."""
     from apscheduler.schedulers.blocking import BlockingScheduler
     from prometheus_client import start_http_server
 
+    from agent.asset_promoter import promote_once as promote_assets_once
     from agent.correlator import run_once as correlate_once
     from agent.observer.observer import run_once as observe_once
     from agent.rule_engine import run_once as propose_once
@@ -243,6 +253,17 @@ def cmd_serve(_args: argparse.Namespace) -> int:
         except Exception as exc:  # noqa: BLE001
             logger.exception("serve: propose failed: %s", exc)
 
+    def asset_promote_job() -> None:
+        try:
+            promote_assets_once(
+                get_reader(),
+                get_writer(),
+                get_asset_promoter(),
+                threshold=settings.asset_auto_promote_threshold,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("serve: asset-promote failed: %s", exc)
+
     scheduler.add_job(
         observe_job,
         "interval",
@@ -264,12 +285,20 @@ def cmd_serve(_args: argparse.Namespace) -> int:
         id="propose",
         max_instances=1,
     )
+    scheduler.add_job(
+        asset_promote_job,
+        "interval",
+        seconds=settings.observer_interval_sec,
+        id="asset-promote",
+        max_instances=1,
+    )
 
     logger.info(
-        "serve: observer=%ss correlator=%ss rule_engine=%ss",
+        "serve: observer=%ss correlator=%ss rule_engine=%ss asset_promote=%ss",
         settings.observer_interval_sec,
         settings.correlator_interval_sec,
         settings.rule_engine_interval_sec,
+        settings.observer_interval_sec,
     )
     scheduler.start()
     return 0
@@ -290,6 +319,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_promote = sub.add_parser("promote", help="promote approved proposal")
     p_promote.add_argument("rule_id")
 
+    sub.add_parser("approve-assets", help="promote approved/auto assets to inventory")
+
     sub.add_parser("serve", help="run scheduled agent")
     return parser
 
@@ -300,6 +331,7 @@ _HANDLERS: dict[str, Callable[[argparse.Namespace], int]] = {
     "correlate": cmd_correlate,
     "propose": cmd_propose,
     "promote": cmd_promote,
+    "approve-assets": cmd_approve_assets,
     "serve": cmd_serve,
 }
 

@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     clickhouse_writer_pass: str = Field("", alias="AGENT_WRITER_PASS")
     clickhouse_promoter_user: str = "agent_promoter"
     clickhouse_promoter_pass: str = Field("", alias="AGENT_PROMOTER_PASS")
+    clickhouse_asset_promoter_user: str = "agent_asset_promoter"
+    clickhouse_asset_promoter_pass: str = Field("", alias="AGENT_ASSET_PROMOTER_PASS")
+
+    # Автопромоут активов: proposals с confidence >= порога переносятся в assets
+    # сразу (без ручного approved); ниже порога — ждут ручного одобрения.
+    asset_auto_promote_threshold: float = 0.9
 
     litellm_base_url: str = "http://localhost:4000"
     litellm_api_key: str = ""
