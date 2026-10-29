@@ -40,6 +40,21 @@ class TestValidSql:
         )
         assert ok, reason
 
+    def test_settings_clause_allowed(self) -> None:
+        """LEFT JOIN-правила используют SETTINGS join_use_nulls = 1 (анти-джоин через IS NULL)."""
+        ok, reason = validate_sql(
+            """
+            SELECT e.tool_name
+            FROM security_logs.events_tool_calls AS e
+            LEFT JOIN security_logs.mcp_tools AS m ON e.tool_name = m.tool_name
+            WHERE e.timestamp >= now() - INTERVAL 10 MINUTE
+              AND m.tool_id IS NULL
+            GROUP BY e.tool_name
+            SETTINGS join_use_nulls = 1
+            """
+        )
+        assert ok, reason
+
 
 class TestSeverityExtraction:
     def test_from_literal_alias(self) -> None:
