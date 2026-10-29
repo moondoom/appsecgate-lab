@@ -213,10 +213,15 @@ def cmd_promote(args: argparse.Namespace) -> int:
 def cmd_serve(_args: argparse.Namespace) -> int:
     """Планировщик APScheduler: observer / correlator / rule-engine по интервалам."""
     from apscheduler.schedulers.blocking import BlockingScheduler
+    from prometheus_client import start_http_server
 
     from agent.correlator import run_once as correlate_once
     from agent.observer.observer import run_once as observe_once
     from agent.rule_engine import run_once as propose_once
+
+    # Метрики для Prometheus (порт по умолчанию 9101).
+    start_http_server(settings.metrics_port)
+    logger.info("serve: metrics on :%d", settings.metrics_port)
 
     scheduler = BlockingScheduler(timezone="UTC")
 

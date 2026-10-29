@@ -20,6 +20,8 @@ class Settings(BaseSettings):
 
     agent_model: str = "gemma4:26b"
 
+    metrics_port: int = 9101
+
     observer_interval_sec: int = 300
     correlator_interval_sec: int = 60
     rule_engine_interval_sec: int = 3600

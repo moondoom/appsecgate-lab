@@ -25,4 +25,4 @@ EXPOSE 9101
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["uv", "run", "--no-sync", "agent", "run"]
+CMD ["/app/.venv/bin/agent", "serve"]
