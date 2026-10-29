@@ -3,8 +3,8 @@
 #
 # Имена моделей для клиентов:
 #   ollama/<model>   -> Ollama ($OLLAMA_API_BASE)
-#   p/<model> -> PROXYAPI (OpenAI-compatible)
-#   a/<model> -> AITUNNEL (OpenAI-compatible)
+#   p/<model> -> PROVIDER_1 (OpenAI-compatible)
+#   a/<model> -> PROVIDER_2 (OpenAI-compatible)
 
 model_list:
   - model_name: "ollama/glm-4.7-flash:latest"
