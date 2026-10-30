@@ -1,65 +1,74 @@
 # AGENTS.md
 
-Инструкции для ИИ-агентов и разработчиков. Проект: автономный аудит LLM-стенда
-(LiteLLM + OTel + ClickHouse + агент-наблюдатель).
+Instructions for AI agents and developers. Project: autonomous LLM-stack auditing
+(LiteLLM + OTel + ClickHouse + observer agent).
 
-## Команды (всё через `make`)
+## Language
+
+All communication, comments, docstrings, documentation and commit messages are in
+**English**. Never write rules, comments or docs in Russian.
+
+## Commands (everything via `make`)
 ```bash
 make init           # .env + uv sync
-make check          # lint + typecheck + test (перед коммитом)
-make test           # pytest; make test-validator — тесты Validator
-make up / down      # docker compose стенда
-make smoke          # сквозная проверка стенда
+make check          # lint + typecheck + test (before committing)
+make test           # pytest; make test-validator — Validator tests
+make up / down      # docker compose of the stand
+make smoke          # end-to-end stand check
 ```
 
 ## Python
-- **Только uv**: `uv sync --locked`, `uv run ...`. Никаких `pip install` и ручных venv.
-- Зависимости правим в `agent/pyproject.toml`, затем `make lock`; `uv.lock` коммитим.
-- Python 3.12, ruff, mypy, pytest. Тесты обязательны для normalize, MCP-парсера и Validator.
+- **uv only**: `uv sync --locked`, `uv run ...`. No `pip install`, no manual venvs.
+- Dependencies are edited in `agent/pyproject.toml`, then `make lock`; commit `uv.lock`.
+- Python 3.12, ruff, mypy, pytest. Tests are mandatory for normalize, the MCP parser and the Validator.
 
-## Безопасность — только MCP
+## Security — MCP only
 
-Никаких локальных сканеров (gitleaks, semgrep, trivy). Всё сканирование — через инструменты AppSecGate MCP:
+No local scanners (gitleaks, semgrep, trivy). All scanning goes through AppSecGate MCP tools:
 
-| Триггер | Инструмент MCP | Что проверяет |
+| Trigger | MCP tool | What it checks |
 | :--- | :--- | :--- |
-| После правки файла | `scan_file(path)` | SAST, секреты, IaC — один файл |
-| Перед коммитом | `scan_diff()` | Все изменения в диффе |
-| После этапа (A–I) | `scan_project()` | Весь проект целиком |
-| Нашлась находка | `get_fix_context(id)` → правишь → `verify_fix(id, status)` | Контекст + верификация |
-| Ложное срабатывание | `submit_feedback(id, type=FALSE_POSITIVE, reason=...)` | Без причины — нельзя |
+| After editing a file | `scan_file(path)` | SAST, secrets, IaC — one file |
+| Before committing | `scan_diff()` | Everything in the diff |
+| After a stage (A–I) | `scan_project()` | The whole project |
+| A finding is found | `get_fix_context(id)` → fix → `verify_fix(id, status)` | Context + verification |
+| False positive | `submit_feedback(id, type=FALSE_POSITIVE, reason=...)` | No reason — not allowed |
 
-Полный сценарий и шпаргалка: `docs/mcp-scan-skill.md`.
-Cline читает эти правила автоматически из `.clinerules`.
+Full scenario and cheat sheet: `docs/mcp-scan-skill.md`.
+Cline reads these rules automatically from `.clinerules`.
 
-**Правила:**
-1. Секреты только в `.env` (в `.gitignore`). В репозитории — `.env.example` с плейсхолдерами.
-2. После правки **любого** файла вызывать `scan_file`. Перед коммитом — `scan_diff`.
-3. Находки `critical`/`high` исправлять сразу через `get_fix_context` + правка + `verify_fix`.
-4. Ложные срабатывания: `submit_feedback` с причиной. Игнорировать без причины — нельзя.
-5. В конце каждого этапа — `scan_project`. Результат должен быть 0 findings или все задокументированы.
-6. **Никогда не читать и не взаимодействовать с рабочим `.env`** — он gitignored и содержит живые секреты. Всё, что касается секретов, правится только в `.env.example` (плейсхолдеры); актуальные значения в локальный `.env` вносит пользователь вручную.
+**Rules:**
+1. Secrets live only in `.env` (gitignored). The repo has `.env.example` with placeholders.
+2. After editing **any** file run `scan_file`. Do not skip it.
+3. Findings `critical`/`high` are fixed right away via `get_fix_context` + fix + `verify_fix`.
+4. False positives: `submit_feedback` with a reason. Ignoring without a reason is not allowed.
+5. At the end of each stage — `scan_project`. The result must be 0 findings or everything documented.
+6. **Never read or interact with the working `.env`** — it is gitignored and holds live secrets.
+   Everything secret-related is edited only in `.env.example` (placeholders); actual values are
+   put into the local `.env` by the user manually.
 
-## Правила для SQL от LLM
-- Весь SQL, сгенерированный LLM, проходит Validator (`sqlglot`: только SELECT, whitelist таблиц `security_logs.*` и `system.*`, blacklist функций `file`/`url`/`s3`/`remote` и др.). Обхода нет.
-- Агент не имеет прав записи в `alert_rules`. Пользователи ClickHouse: `agent_reader`, `agent_writer`, `agent_promoter` — права не расширять.
-- Presidio-фильтр обязателен перед записью `alert_incidents.context`.
+## Rules for LLM-generated SQL
+- All LLM-generated SQL goes through the Validator (`sqlglot`: SELECT only, whitelist of tables
+  `security_logs.*` and `system.*`, blacklist of functions `file`/`url`/`s3`/`remote` and others). No bypass.
+- The agent has no write rights on `alert_rules`. ClickHouse users: `agent_reader`,
+  `agent_writer`, `agent_promoter` — do not extend their rights.
+- Presidio filtering is mandatory before writing to `alert_incidents.context`.
 
-## Процесс
-- Работать по этапам A–I из плана; после этапа — `make check` и фиксация результата.
-- Расхождения с исходным документом записывать в `docs/decisions.md`.
-- Коммиты небольшие, сообщения в стиле Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
-- Не добавлять библиотеки, которых нет в `pyproject.toml`, без обновления lock-файла и обоснования.
+## Process
+- Work through stages A–I of the plan; after each stage — `make check` and commit the result.
+- Deviations from the source document are recorded in `docs/decisions.md`.
+- Small commits, Conventional Commits style (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
+- Do not add libraries that are not in `pyproject.toml` without updating the lock file and justifying the change.
 
-## Структура репозитория
+## Repository layout
 ```
 .
 ├── AGENTS.md / Makefile / docker-compose.yml
 ├── .pre-commit-config.yaml / .gitignore / .env.example
-├── agent/         # Python-агент (uv-проект)
-├── clickhouse/    # Init-скрипты
-├── litellm/otel/prometheus/vector/grafana/  # Конфиги сервисов
-├── rules/static/  # Статические SQL-правила
-├── scripts/       # shell-обёртки
-└── docs/          # Документация и решения
+├── agent/         # Python agent (uv project)
+├── clickhouse/    # Init scripts
+├── litellm/otel/prometheus/vector/grafana/  # Service configs
+├── rules/static/  # Static SQL rules
+├── scripts/       # Shell wrappers
+└── docs/          # Documentation and decisions
 ```

@@ -1,24 +1,31 @@
 # Cline Rules — AppSecGate Lab
 
-Приоритет: этот файл → AGENTS.md → docs/mcp-scan-skill.md
+Priority: this file → AGENTS.md → docs/mcp-scan-skill.md
 
-## Обязательный ритуал безопасности (MCP)
+## Language (mandatory)
 
-Перед началом работы прочитай `docs/mcp-scan-skill.md` — там полный сценарий.
-Кратко:
+- All communication, reasoning, comments, docstrings, docs and commit messages are written in **English only**.
+- Do not write rules, comments or documentation in Russian.
+- Keep UI-facing strings and Prometheus metric descriptions in English too.
 
-1. После правки любого файла → `appsecgate-lab__scan_file(path=<файл>)`
-2. Перед коммитом → `appsecgate-lab__scan_diff()`
-3. После завершения этапа → `appsecgate-lab__scan_project()`
-4. Находки critical/high → `get_fix_context` → правка → `verify_fix`
-5. Ложные срабатывания → `submit_feedback` с причиной
+## Mandatory security ritual (MCP)
 
-Никаких локальных сканеров. Только MCP.
+Before starting any work read `docs/mcp-scan-skill.md` — the full scenario is there.
+Briefly:
 
-## Работа с проектом
+1. After editing any file → `appsecgate-lab__scan_file(path=<file>)`
+2. Before committing → `appsecgate-lab__scan_diff()`
+3. After finishing a stage → `appsecgate-lab__scan_project()`
+4. Findings critical/high → `get_fix_context` → fix → `verify_fix`
+5. False positives → `submit_feedback` with a reason
 
-- Все Python-команды через `uv run` из `agent/`
-- `make check` — lint + typecheck + test перед коммитом
+No local scanners. MCP only.
+
+## Working with the project
+
+- All Python commands via `uv run` from `agent/`
+- `make check` — lint + typecheck + test before committing
 - `make up` / `make down` — docker compose
-- Тесты обязательны для normalize, MCP-парсера и Validator
-- Коммиты — Conventional Commits
+- Tests are mandatory for normalize, the MCP parser and the Validator
+- Commits — Conventional Commits
+
