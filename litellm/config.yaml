@@ -46,8 +46,8 @@ litellm_settings:
 general_settings:
   otel: true
   # Аутентификация прокси включена — LITELLM_MASTER_KEY подставляется из .env
-  # (в docker-compose это переменная LITELLM_API_KEY). Без Postgres virtual keys
-  # не работают, поэтому agent-observer ходит под тем же master key.
+  # (в docker-compose это переменная LITELLM_API_KEY). С Postgres virtual keys
+  # работают; agent-observer пока ходит под тем же master key (docs/decisions.md №30).
   master_key: os.environ/LITELLM_MASTER_KEY
 
 guardrails:

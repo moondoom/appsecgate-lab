@@ -6,6 +6,7 @@ volumes:
   clickhouse-data:
   grafana-data:
   prometheus-data:
+  postgres-data:
 
 services:
   litellm:
@@ -29,21 +30,46 @@ services:
       OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: "span_only"
       LITELLM_OTEL_V2: "true"
       PROMETHEUS_METRICS_PORT: "4001"
+      # --- Внутренняя БД прокси (Postgres): virtual keys, teams, budgets, Admin UI ---
+      DATABASE_URL: postgresql://litellm:${LITELLM_DB_PASS}@postgres:5432/litellm
+      # --- Admin UI (http://localhost:4000/ui) — логин по UI_USERNAME/UI_PASSWORD ---
+      UI_USERNAME: ${LITELLM_UI_USERNAME}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
       # Провайдеры — значения берутся из .env (см. .env.example)
       OLLAMA_API_BASE: ${OLLAMA_API_BASE}
       OAI_PROVIDER_1_API_BASE: ${OAI_PROVIDER_1_API_BASE}
       OAI_PROVIDER_1_API_KEY: ${OAI_PROVIDER_1_API_KEY}
       OAI_PROVIDER_2_API_BASE: ${OAI_PROVIDER_2_API_BASE}
       OAI_PROVIDER_2_API_KEY: ${OAI_PROVIDER_2_API_KEY}
-      LITELLM_MASTER_KEY: ${LITELLM_API_KEY}   # включить вместе с master_key в config.yaml
+      LITELLM_MASTER_KEY: ${LITELLM_API_KEY}   # master key (admin); virtual keys работают — Postgres подключён
       PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks: [llm-net]
     depends_on:
+      postgres: { condition: service_healthy }
       clickhouse: { condition: service_healthy }
       otel-collector: { condition: service_started }
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: litellm-postgres
+    restart: unless-stopped
+    # Внутренняя БД LiteLLM-прокси (virtual keys, teams, budgets, CRUD из Admin UI).
+    # На хост не пробрасывается: доступ — docker compose exec litellm-postgres psql -U litellm
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: ${LITELLM_DB_PASS}
+      POSTGRES_DB: litellm
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [llm-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   jaeger:
     image: jaegertracing/all-in-one:latest

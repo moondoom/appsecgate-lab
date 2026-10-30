@@ -14,7 +14,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](agent/pyproject.toml)
 [![Package manager](https://img.shields.io/badge/package%20manager-uv-4F46E5)](https://docs.astral.sh/uv/)
-[![Docker Compose](https://img.shields.io/badge/docker%20compose-12%20services-2496ED)](docker-compose.yml)
+[![Docker Compose](https://img.shields.io/badge/docker%20compose-13%20services-2496ED)](docker-compose.yml)
 [![Part of](https://img.shields.io/badge/part%20of-appsecgate--mcp-4CAF50)](https://github.com/moondoom/appsecgate-mcp)
 [![Status: TEST LAB](https://img.shields.io/badge/status-TEST%20LAB-important)](README.md)
 [![GitHub stars](https://img.shields.io/github/stars/moondoom/appsecgate-lab)](https://github.com/moondoom/appsecgate-lab)
@@ -37,7 +37,7 @@
 
 **Medium:**
 
-> Spin up a 12-service `docker compose` stack (LiteLLM, OTel Collector, Jaeger,
+> Spin up a 13-service `docker compose` stack (LiteLLM, OTel Collector, Jaeger,
 > ClickHouse, Prometheus, Grafana, Presidio, Vector) plus a Python agent that watches
 > the event stream, detects anomalies and proposes rules for review. Everything here is
 > an experiment — use at your own risk!
@@ -70,9 +70,10 @@ for practicing autonomous auditing. Not production — use at your own risk!
 
 ## What it is
 
-A 12-service `docker compose` stack plus a Python agent (`agent/`):
+A 13-service `docker compose` stack plus a Python agent (`agent/`):
 
 - **LiteLLM** — LLM-model proxy, the traffic source (wrapped in OpenTelemetry).
+- **Postgres** — LiteLLM's internal database: virtual keys, teams, budgets and Admin UI CRUD.
 - **OpenTelemetry Collector** — receives traces/metrics, exports to Jaeger and ClickHouse.
 - **Jaeger** — trace visualization for debugging.
 - **ClickHouse** — storage for logs, traces and correlation results.
@@ -85,7 +86,7 @@ A 12-service `docker compose` stack plus a Python agent (`agent/`):
 
 ```bash
 make init        # create .env from .env.example + uv sync
-# fill passwords in .env (rand -hex 32 etc.)
+# fill passwords in .env (rand -hex 32 etc.) — incl. LITELLM_DB_PASS and LITELLM_UI_PASSWORD
 make up          # docker compose up -d --build
 make config      # validate compose config
 make ch-init     # apply clickhouse/init/*.sql (if not auto-applied)
@@ -106,6 +107,9 @@ Default ports:
 | Presidio | `5002` |
 | node-exporter / cAdvisor / GPU | `9100` / `8080` / `9835` |
 | agent-observer metrics | `9101` |
+
+> The `postgres` service (LiteLLM internal DB — virtual keys, teams, budgets,
+> Admin UI CRUD) stays inside `llm-net` and is not exposed to the host.
 
 ## Commands
 
@@ -132,7 +136,7 @@ Default ports:
 ├── litellm/ otel/ prometheus/ vector/ grafana/   # service configs
 ├── rules/static/           # 10 static SQL correlation rules
 ├── docs/                   # decisions.md, MCP skill
-└── docker-compose.yml      # 12 services
+└── docker-compose.yml      # 13 services
 ```
 
 ## Dashboards (Grafana)
@@ -153,6 +157,18 @@ docker compose restart grafana   # when adding the provider for the first time
 ```
 
 Grafana → http://localhost:3000, folder **AppSecGate**.
+
+## LiteLLM Admin UI
+
+The proxy ships a built-in admin UI at **http://localhost:4000/ui** — create
+virtual keys, teams, budgets and manage models without touching config.yaml.
+
+Login uses `LITELLM_UI_USERNAME` / `LITELLM_UI_PASSWORD` from `.env`; if
+`LITELLM_UI_PASSWORD` is left empty, the master key (`LITELLM_API_KEY`) is
+accepted as the password. API reference (Swagger): http://localhost:4000/.
+
+For the UI's CRUD operations LiteLLM needs its internal SQL database — the
+`postgres` service (13th in the stack, see above).
 
 ## Security: MCP only
 
