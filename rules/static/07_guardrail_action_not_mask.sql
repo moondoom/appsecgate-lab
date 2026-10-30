@@ -1,5 +1,5 @@
--- Гардрейл отработал неожиданно: действие не MASK или статус не success
--- Источник: security_logs.events_guardrails (витрина из litellm.spend_logs)
+-- Guardrail behaved unexpectedly: action is not MASK or status is not success
+-- Source: security_logs.events_guardrails (view from litellm.spend_logs)
 SELECT
     e.guardrail_name,
     e.guardrail_provider,

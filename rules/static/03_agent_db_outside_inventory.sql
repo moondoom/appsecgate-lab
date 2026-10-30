@@ -1,5 +1,5 @@
--- AI-агент обращается к БД вне инвентаря
--- Источник: §8.3 source.md
+-- AI agent accesses DB outside inventory
+-- Source: §8.3 source.md
 SELECT
     t.trace_id,
     t.agent_name,

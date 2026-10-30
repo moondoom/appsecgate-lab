@@ -1,5 +1,5 @@
--- Shadow IT: наблюдаемый хост без декларации
--- Источник: §8.2 source.md
+-- Shadow IT: observed host without declaration
+-- Source: §8.2 source.md
 SELECT
     a.asset_key AS host,
     a.last_seen,

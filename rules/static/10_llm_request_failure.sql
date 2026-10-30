@@ -1,5 +1,5 @@
--- Ошибки LLM-запросов через прокси (витрина spend_logs_extended)
--- Источник: security_logs.spend_logs_extended (витрина из litellm.spend_logs)
+-- LLM request failures through the proxy (view spend_logs_extended)
+-- Source: security_logs.spend_logs_extended (view from litellm.spend_logs)
 SELECT
     e.request_id,
     e.model,

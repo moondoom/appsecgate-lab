@@ -1,5 +1,5 @@
--- Неизвестный AI-агент (более 5 вызовов)
--- Источник: §8.4 source.md
+-- Unknown AI agent (more than 5 calls)
+-- Source: §8.4 source.md
 SELECT
     t.agent_name,
     min(t.timestamp) AS first_seen,

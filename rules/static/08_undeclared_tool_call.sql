@@ -1,5 +1,5 @@
--- Вызов инструмента, которого нет ни в mcp_tools, ни в инвентаре (тип tool)
--- Источник: security_logs.events_tool_calls (витрина из litellm.spend_logs)
+-- Tool call missing from mcp_tools and inventory (type tool)
+-- Source: security_logs.events_tool_calls (view from litellm.spend_logs)
 SELECT
     e.tool_name,
     e.user_id,

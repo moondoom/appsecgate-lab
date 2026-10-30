@@ -1,5 +1,5 @@
--- Всплеск вызовов инструмента одним агентом (потенциально зациклившийся агент)
--- Источник: security_logs.events_tool_calls (витрина из litellm.spend_logs)
+-- Tool call burst by a single agent (possibly looped agent)
+-- Source: security_logs.events_tool_calls (view from litellm.spend_logs)
 SELECT
     e.user_id,
     e.tool_name,

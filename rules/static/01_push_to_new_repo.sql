@@ -1,5 +1,5 @@
--- Пуш в новый репозиторий (неизвестный в инвентаре)
--- Источник: §8.1 source.md
+-- Push to new repository (unknown in inventory)
+-- Source: §8.1 source.md
 SELECT
     e.trace_id,
     e.source_host,

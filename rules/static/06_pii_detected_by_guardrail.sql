@@ -1,5 +1,5 @@
--- PII в трафике: пресидио-гардрейл замаскировал чувствительные сущности
--- Источник: security_logs.events_guardrails (витрина из litellm.spend_logs)
+-- PII in traffic: Presidio guardrail masked sensitive entities
+-- Source: security_logs.events_guardrails (view from litellm.spend_logs)
 SELECT
     e.guardrail_name,
     e.guardrail_mode,

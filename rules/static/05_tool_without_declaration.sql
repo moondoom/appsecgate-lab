@@ -1,5 +1,5 @@
--- Вызов MCP-инструмента без декларации в промпте
--- Источник: §6.3, паттерн 1 source.md
+-- MCP tool call without declaration in prompt
+-- Source: §6.3, pattern 1 source.md
 SELECT
     b.asset_key AS agent_asset,
     b.tool_key,
