@@ -11,8 +11,8 @@ UV       := uv --project $(AGENT_DIR)
         load-rules observe correlate propose promote serve \
         dashboards smoke
 
-help: ## Показать эту справку
-	@awk 'BEGIN {FS = ":.*##"; printf "\nЦели:\n"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+help: ## Show this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nTargets:\n"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 init: .env sync ## .env + uv sync
 
