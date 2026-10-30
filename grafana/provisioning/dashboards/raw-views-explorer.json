@@ -30,7 +30,7 @@
         "y": 0
       },
       "id": 1,
-      "title": "Запросы (spend_logs_extended)",
+      "title": "Requests (spend_logs_extended)",
       "type": "row"
     },
     {
@@ -94,7 +94,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Запросов",
+      "title": "Requests",
       "type": "stat",
       "id": 2
     },
@@ -159,7 +159,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Ошибки, %",
+      "title": "Errors, %",
       "type": "stat",
       "id": 3
     },
@@ -224,7 +224,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Стоимость, $",
+      "title": "Cost, $",
       "type": "stat",
       "id": 4
     },
@@ -289,7 +289,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Токены",
+      "title": "Tokens",
       "type": "stat",
       "id": 5
     },
@@ -609,7 +609,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Сырые строки",
+      "title": "Raw rows",
       "type": "table"
     },
     {
@@ -685,7 +685,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Вызовов",
+      "title": "Calls",
       "type": "stat",
       "id": 10
     },
@@ -750,7 +750,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Уникальных запросов",
+      "title": "Unique requests",
       "type": "stat",
       "id": 11
     },
@@ -819,7 +819,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Top-10 тулов",
+      "title": "Top-10 tools",
       "type": "barchart"
     },
     {
@@ -887,7 +887,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "По статусу",
+      "title": "By status",
       "type": "barchart"
     },
     {
@@ -1052,7 +1052,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Сырые вызовы",
+      "title": "Raw calls",
       "type": "table"
     },
     {
@@ -1128,7 +1128,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Срабатываний",
+      "title": "Hits",
       "type": "stat",
       "id": 16
     },
@@ -1193,7 +1193,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "PII-сущностей (всего)",
+      "title": "PII entities (total)",
       "type": "stat",
       "id": 17
     },
@@ -1267,7 +1267,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Типы сущностей",
+      "title": "Entity types",
       "type": "piechart"
     },
     {
@@ -1335,7 +1335,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "По action/status",
+      "title": "By action/status",
       "type": "barchart"
     },
     {
@@ -1512,7 +1512,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Сырые срабатывания",
+      "title": "Raw hits",
       "type": "table"
     },
     {
@@ -1524,7 +1524,7 @@
         "y": 53
       },
       "id": 21,
-      "title": "Инциденты (alert_incidents)",
+      "title": "Incidents (alert_incidents)",
       "type": "row"
     },
     {
@@ -1588,7 +1588,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Всего",
+      "title": "Total",
       "type": "stat",
       "id": 22
     },
@@ -1653,7 +1653,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Открытых",
+      "title": "Open",
       "type": "stat",
       "id": 23
     },
@@ -1722,7 +1722,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "По правилам",
+      "title": "By rule",
       "type": "barchart"
     },
     {
@@ -1790,7 +1790,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "По severity",
+      "title": "By severity",
       "type": "barchart"
     },
     {
@@ -1955,7 +1955,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Сырые инциденты",
+      "title": "Raw incidents",
       "type": "table"
     },
     {
@@ -1967,7 +1967,7 @@
         "y": 72
       },
       "id": 27,
-      "title": "Инвентарь и предложения",
+      "title": "Inventory & proposals",
       "type": "row"
     },
     {
@@ -2132,7 +2132,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Активы (assets)",
+      "title": "Assets",
       "type": "table"
     },
     {
@@ -2297,7 +2297,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Предложения активов (asset_proposals)",
+      "title": "Asset proposals",
       "type": "table"
     },
     {
@@ -2474,7 +2474,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Предложения правил (rule_proposals)",
+      "title": "Rule proposals",
       "type": "table"
     },
     {
@@ -2639,7 +2639,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Правила (alert_rules)",
+      "title": "Rules (alert_rules)",
       "type": "table"
     }
   ],
@@ -2665,7 +2665,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Модель",
+        "label": "Model",
         "current": {
           "text": "All",
           "value": "All",
@@ -2687,7 +2687,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Агент (user_id)",
+        "label": "Agent (user_id)",
         "current": {
           "text": "All",
           "value": "All",
@@ -2709,7 +2709,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Инструмент",
+        "label": "Tool",
         "current": {
           "text": "All",
           "value": "All",
@@ -2731,7 +2731,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Гардрейл",
+        "label": "Guardrail",
         "current": {
           "text": "All",
           "value": "All",
@@ -2775,7 +2775,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Статус",
+        "label": "Status",
         "current": {
           "text": "All",
           "value": "All",
@@ -2791,7 +2791,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Сырые данные из view",
+  "title": "Raw Views Explorer",
   "uid": "raw-views-explorer",
   "version": 1,
   "weekStart": ""

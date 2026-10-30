@@ -2,8 +2,8 @@
 """Скрипт генерации Grafana-дашбордов AppSecGate (stdlib only, без зависимостей).
 
 Выход (коммитится вместе со скриптом):
-  grafana/provisioning/dashboards/agent-activity-control.json  — «Агент: контроль действий»
-  grafana/provisioning/dashboards/raw-views-explorer.json      — «Сырые данные из view»
+  grafana/provisioning/dashboards/agent-activity-control.json  — "Agent Activity Control"
+  grafana/provisioning/dashboards/raw-views-explorer.json      — "Raw Views Explorer"
 
 Запуск: python3 scripts/gen_dashboards.py   (или `make dashboards`)
 
@@ -392,20 +392,20 @@ def build_dashboard(
 # ---------------------------------------------------------------------------
 
 VARS_1 = [
-    var_query("model", "Модель", var_sql("model", "spend_logs_extended")),
-    var_query("agent", "Агент (user_id)", var_sql("user_id", "spend_logs_extended")),
-    var_query("tool", "Инструмент", var_sql("tool_name", "events_tool_calls")),
-    var_query("guardrail", "Гардрейл", var_sql("guardrail_name", "events_guardrails")),
+    var_query("model", "Model", var_sql("model", "spend_logs_extended")),
+    var_query("agent", "Agent (user_id)", var_sql("user_id", "spend_logs_extended")),
+    var_query("tool", "Tool", var_sql("tool_name", "events_tool_calls")),
+    var_query("guardrail", "Guardrail", var_sql("guardrail_name", "events_guardrails")),
 ]
 
 VARS_2 = VARS_1 + [
     var_query("severity", "Severity", var_sql("severity", "alert_incidents")),
-    var_query("status", "Статус", var_sql("status", "spend_logs_extended")),
+    var_query("status", "Status", var_sql("status", "spend_logs_extended")),
 ]
 
 
 # ---------------------------------------------------------------------------
-# Дашборд 1: «Агент: контроль действий»
+# Dashboard 1: "Agent Activity Control"
 # ---------------------------------------------------------------------------
 
 
@@ -422,15 +422,15 @@ def F(var: str, col: str) -> str:
 
 DB1_ROWS: list[tuple[str, list[dict]]] = [
     (
-        "Обзор",
+        "Overview",
         [
             stat(
-                "Запросы",
+                "Requests",
                 "SELECT count() AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')}",
             ),
             stat(
-                "Ошибки, %",
+                "Errors, %",
                 "SELECT round(100 * countIf(status = 'failure') / count(), 2) AS v"
                 " FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')}",
@@ -438,45 +438,45 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 decimals=2,
             ),
             stat(
-                "Стоимость, $",
+                "Cost, $",
                 "SELECT round(sum(cost), 4) AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) AND status = 'success' {F('model', 'model')} {F('agent', 'user_id')}",
                 unit="currencyUSD",
                 decimals=4,
             ),
             stat(
-                "Токены",
+                "Tokens",
                 "SELECT sum(total_tokens) AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')}",
             ),
             stat(
-                "TTFT p95, мс",
+                "TTFT p95, ms",
                 "SELECT round(quantile(0.95)(ttft_ms)) AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')}",
                 unit="ms",
             ),
             stat(
-                "Вызовы тулов",
+                "Tool calls",
                 "SELECT count() AS v FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('tool', 'tool_name')}",
             ),
             stat(
-                "Срабатывания гардрейлов",
+                "Guardrail hits",
                 "SELECT count() AS v FROM security_logs.events_guardrails"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('guardrail', 'guardrail_name')}",
             ),
             stat(
-                "Открытые инциденты",
+                "Open incidents",
                 "SELECT countIf(disposition = 'open') AS v FROM security_logs.alert_incidents",
                 thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 1}],
             ),
         ],
     ),
     (
-        "Запросы к LLM (spend_logs_extended)",
+        "LLM requests (spend_logs_extended)",
         [
             ts(
-                "Запросы по статусу",
+                "Requests by status",
                 "SELECT $__timeInterval(timestamp) AS time, status, count() AS v"
                 " FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')}"
@@ -484,7 +484,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=12,
             ),
             ts(
-                "Стоимость по времени, $",
+                "Cost over time, $",
                 "SELECT $__timeInterval(timestamp) AS time, sum(cost) AS v"
                 " FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) AND status = 'success' {F('model', 'model')} {F('agent', 'user_id')}"
@@ -493,7 +493,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=6,
             ),
             ts(
-                "TTFT p95, мс",
+                "TTFT p95, ms",
                 "SELECT $__timeInterval(timestamp) AS time, quantile(0.95)(ttft_ms) AS v"
                 " FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')}"
@@ -502,7 +502,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=6,
             ),
             ts(
-                "Токены: prompt/completion",
+                "Tokens: prompt/completion",
                 "SELECT $__timeInterval(timestamp) AS time, 'prompt' AS series,"
                 " sum(prompt_tokens) AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')}"
@@ -515,21 +515,21 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=12,
             ),
             bar(
-                "Запросы по модели",
+                "Requests by model",
                 "SELECT model AS metric, count() AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')}"
                 " GROUP BY model ORDER BY v DESC",
                 w=6,
             ),
             bar(
-                "Ошибки по модели",
+                "Errors by model",
                 "SELECT model AS metric, count() AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) AND status = 'failure' {F('agent', 'user_id')}"
                 " GROUP BY model ORDER BY v DESC",
                 w=6,
             ),
             table(
-                "Последние запросы",
+                "Latest requests",
                 "SELECT timestamp, request_id, trace_id, model, user_id, status, cost,"
                 " prompt_tokens, completion_tokens, total_tokens, ttft_ms,"
                 " tool_calls_count, guardrails_count, requester_ip, user_agent, error_str"
@@ -541,10 +541,10 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
         ],
     ),
     (
-        "Инструменты (events_tool_calls)",
+        "Tools (events_tool_calls)",
         [
             ts(
-                "Вызовы тулов по времени",
+                "Tool calls over time",
                 "SELECT $__timeInterval(timestamp) AS time, count() AS v"
                 " FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('tool', 'tool_name')}"
@@ -552,21 +552,21 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=12,
             ),
             bar(
-                "Top-10 тулов",
+                "Top-10 tools",
                 "SELECT tool_name AS metric, count() AS v FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')}"
                 " GROUP BY tool_name ORDER BY v DESC LIMIT 10",
                 w=6,
             ),
             bar(
-                "По агентам (user_id)",
+                "By agent (user_id)",
                 "SELECT user_id AS metric, count() AS v FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('tool', 'tool_name')}"
                 " GROUP BY user_id ORDER BY v DESC LIMIT 10",
                 w=6,
             ),
             table(
-                "Последние вызовы тулов",
+                "Latest tool calls",
                 "SELECT timestamp, request_id, model, user_id, tool_name, status,"
                 " substring(arguments, 1, 400) AS arguments"
                 " FROM security_logs.events_tool_calls"
@@ -576,10 +576,10 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
         ],
     ),
     (
-        "Гардрейлы (events_guardrails)",
+        "Guardrails (events_guardrails)",
         [
             ts(
-                "Срабатывания по action",
+                "Hits by action",
                 "SELECT $__timeInterval(timestamp) AS time, action, count() AS v"
                 " FROM security_logs.events_guardrails"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('guardrail', 'guardrail_name')}"
@@ -587,7 +587,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=12,
             ),
             bar(
-                "Top-10 гардрейлов",
+                "Top-10 guardrails",
                 "SELECT guardrail_name AS metric, count() AS v"
                 " FROM security_logs.events_guardrails"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')}"
@@ -595,7 +595,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=6,
             ),
             pie(
-                "Типы сущностей",
+                "Entity types",
                 "SELECT entity_type AS metric, count() AS v"
                 " FROM security_logs.events_guardrails"
                 " ARRAY JOIN entity_types AS entity_type"
@@ -604,7 +604,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=6,
             ),
             table(
-                "Последние срабатывания",
+                "Latest hits",
                 "SELECT timestamp, request_id, model, user_id, guardrail_name,"
                 " guardrail_mode, action, duration_ms,"
                 " arrayStringConcat(entity_types, ',') AS entity_types,"
@@ -617,10 +617,10 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
         ],
     ),
     (
-        "Инциденты (alert_incidents)",
+        "Incidents (alert_incidents)",
         [
             ts(
-                "Инциденты по severity",
+                "Incidents by severity",
                 "SELECT $__timeInterval(triggered_at) AS time, severity, count() AS v"
                 " FROM security_logs.alert_incidents"
                 " WHERE $__timeFilter(triggered_at)"
@@ -628,7 +628,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=12,
             ),
             bar(
-                "Инциденты по правилам",
+                "Incidents by rule",
                 "SELECT rule_name AS metric, count() AS v"
                 " FROM security_logs.alert_incidents"
                 " WHERE $__timeFilter(triggered_at)"
@@ -636,7 +636,7 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
                 w=12,
             ),
             table(
-                "Последние инциденты",
+                "Latest incidents",
                 "SELECT triggered_at, rule_name, severity, triggered_value,"
                 " disposition, context"
                 " FROM security_logs.alert_incidents"
@@ -647,37 +647,37 @@ DB1_ROWS: list[tuple[str, list[dict]]] = [
         ],
     ),
     (
-        "Метрики агента (Prometheus)",
+        "Agent metrics (Prometheus)",
         [
-            stat("Запуски Observer", prom="sum(agent_observer_runs_total)"),
-            stat("Инциденты (всего)", prom="sum(agent_correlator_incidents_total)"),
-            stat("FP-доля", prom="sum(agent_incidents_fp_ratio)", decimals=2),
-            stat("Активы (created)", prom="sum(agent_observer_assets_created_total)"),
-            stat("MCP-тулы (created)", prom="sum(agent_observer_mcp_tools_created_total)"),
-            stat("Правила (promoted)", prom="sum(agent_promoted_rules_total)"),
-            stat("Активы (promoted)", prom="sum(agent_promoted_assets_total)"),
-            stat("Вызовы без декларации", prom="sum(agent_tools_without_declaration_total)"),
+            stat("Observer runs", prom="sum(agent_observer_runs_total)"),
+            stat("Incidents (total)", prom="sum(agent_correlator_incidents_total)"),
+            stat("FP ratio", prom="sum(agent_incidents_fp_ratio)", decimals=2),
+            stat("Assets (created)", prom="sum(agent_observer_assets_created_total)"),
+            stat("MCP tools (created)", prom="sum(agent_observer_mcp_tools_created_total)"),
+            stat("Rules (promoted)", prom="sum(agent_promoted_rules_total)"),
+            stat("Assets (promoted)", prom="sum(agent_promoted_assets_total)"),
+            stat("Calls without declaration", prom="sum(agent_tools_without_declaration_total)"),
         ],
     ),
 ]
 
 
 # ---------------------------------------------------------------------------
-# Дашборд 2: «Сырые данные из view»
+# Dashboard 2: "Raw Views Explorer"
 # ---------------------------------------------------------------------------
 
 DB2_ROWS: list[tuple[str, list[dict]]] = [
     (
-        "Запросы (spend_logs_extended)",
+        "Requests (spend_logs_extended)",
         [
             stat(
-                "Запросов",
+                "Requests",
                 "SELECT count() AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')} {F('status', 'status')}",
                 w=4,
             ),
             stat(
-                "Ошибки, %",
+                "Errors, %",
                 "SELECT round(100 * countIf(status = 'failure') / count(), 2) AS v"
                 " FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')} {F('status', 'status')}",
@@ -686,7 +686,7 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 w=4,
             ),
             stat(
-                "Стоимость, $",
+                "Cost, $",
                 "SELECT round(sum(cost), 4) AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) AND status = 'success' {F('model', 'model')} {F('agent', 'user_id')} {F('status', 'status')}",
                 unit="currencyUSD",
@@ -694,7 +694,7 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 w=4,
             ),
             stat(
-                "Токены",
+                "Tokens",
                 "SELECT sum(total_tokens) AS v FROM security_logs.spend_logs_extended"
                 f" WHERE $__timeFilter(timestamp) {F('model', 'model')} {F('agent', 'user_id')} {F('status', 'status')}",
                 w=4,
@@ -712,7 +712,7 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 w=4,
             ),
             table(
-                "Сырые строки",
+                "Raw rows",
                 "SELECT timestamp, request_id, trace_id, user_id, model, model_group,"
                 " custom_llm_provider, status, cost, prompt_tokens, completion_tokens,"
                 " total_tokens, ttft_ms, tool_calls_count, guardrails_count,"
@@ -729,33 +729,33 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
         "Tool calls (events_tool_calls)",
         [
             stat(
-                "Вызовов",
+                "Calls",
                 "SELECT count() AS v FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('tool', 'tool_name')}",
                 w=4,
             ),
             stat(
-                "Уникальных запросов",
+                "Unique requests",
                 "SELECT uniq(request_id) AS v FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('tool', 'tool_name')}",
                 w=4,
             ),
             bar(
-                "Top-10 тулов",
+                "Top-10 tools",
                 "SELECT tool_name AS metric, count() AS v FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')}"
                 " GROUP BY tool_name ORDER BY v DESC LIMIT 10",
                 w=8,
             ),
             bar(
-                "По статусу",
+                "By status",
                 "SELECT status AS metric, count() AS v FROM security_logs.events_tool_calls"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('tool', 'tool_name')}"
                 " GROUP BY status ORDER BY v DESC",
                 w=8,
             ),
             table(
-                "Сырые вызовы",
+                "Raw calls",
                 "SELECT timestamp, request_id, model, user_id, tool_name, status,"
                 " substring(arguments, 1, 1000) AS arguments"
                 " FROM security_logs.events_tool_calls"
@@ -769,13 +769,13 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
         "Guardrails (events_guardrails)",
         [
             stat(
-                "Срабатываний",
+                "Hits",
                 "SELECT count() AS v FROM security_logs.events_guardrails"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('guardrail', 'guardrail_name')}",
                 w=4,
             ),
             stat(
-                "PII-сущностей (всего)",
+                "PII entities (total)",
                 "SELECT count() AS v FROM security_logs.events_guardrails"
                 " ARRAY JOIN entity_types AS et"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('guardrail', 'guardrail_name')}"
@@ -783,7 +783,7 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 w=4,
             ),
             pie(
-                "Типы сущностей",
+                "Entity types",
                 "SELECT entity_type AS metric, count() AS v"
                 " FROM security_logs.events_guardrails"
                 " ARRAY JOIN entity_types AS entity_type"
@@ -792,7 +792,7 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 w=8,
             ),
             bar(
-                "По action/status",
+                "By action/status",
                 "SELECT concat(action, '/', status) AS metric, count() AS v"
                 " FROM security_logs.events_guardrails"
                 f" WHERE $__timeFilter(timestamp) {F('agent', 'user_id')} {F('guardrail', 'guardrail_name')}"
@@ -800,7 +800,7 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 w=8,
             ),
             table(
-                "Сырые срабатывания",
+                "Raw hits",
                 "SELECT timestamp, request_id, model, user_id, guardrail_name,"
                 " guardrail_provider, guardrail_mode, action, status, duration_ms,"
                 " entity_types, masked_entity_counts"
@@ -813,36 +813,36 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
         ],
     ),
     (
-        "Инциденты (alert_incidents)",
+        "Incidents (alert_incidents)",
         [
             stat(
-                "Всего",
+                "Total",
                 "SELECT count() AS v FROM security_logs.alert_incidents"
                 f" WHERE $__timeFilter(triggered_at) {F('severity', 'severity')}",
                 w=4,
             ),
             stat(
-                "Открытых",
+                "Open",
                 "SELECT countIf(disposition = 'open') AS v FROM security_logs.alert_incidents"
                 f" WHERE $__timeFilter(triggered_at) {F('severity', 'severity')}",
                 w=4,
             ),
             bar(
-                "По правилам",
+                "By rule",
                 "SELECT rule_name AS metric, count() AS v FROM security_logs.alert_incidents"
                 f" WHERE $__timeFilter(triggered_at) {F('severity', 'severity')}"
                 " GROUP BY rule_name ORDER BY v DESC LIMIT 10",
                 w=8,
             ),
             bar(
-                "По severity",
+                "By severity",
                 "SELECT severity AS metric, count() AS v FROM security_logs.alert_incidents"
                 " WHERE $__timeFilter(triggered_at)"
                 " GROUP BY severity ORDER BY v DESC",
                 w=8,
             ),
             table(
-                "Сырые инциденты",
+                "Raw incidents",
                 "SELECT triggered_at, rule_name, severity, triggered_value, disposition, context"
                 " FROM security_logs.alert_incidents"
                 f" WHERE $__timeFilter(triggered_at) {F('severity', 'severity')}"
@@ -853,10 +853,10 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
         ],
     ),
     (
-        "Инвентарь и предложения",
+        "Inventory & proposals",
         [
             table(
-                "Активы (assets)",
+                "Assets",
                 "SELECT asset_key, asset_type, asset_subtype, display_name, owner,"
                 " criticality, source_of_truth, is_active, first_seen, last_seen,"
                 " observation_count"
@@ -865,14 +865,14 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 sort_col="last_seen",
             ),
             table(
-                "Предложения активов (asset_proposals)",
+                "Asset proposals",
                 "SELECT created_at, action, asset_key, confidence, status, rationale"
                 " FROM security_logs.asset_proposals FINAL"
                 " ORDER BY created_at DESC LIMIT 200",
                 sort_col="created_at",
             ),
             table(
-                "Предложения правил (rule_proposals)",
+                "Rule proposals",
                 "SELECT created_at, status, hit_rate_sample, estimated_cost, rationale,"
                 " reviewed_by"
                 " FROM security_logs.rule_proposals FINAL"
@@ -881,7 +881,7 @@ DB2_ROWS: list[tuple[str, list[dict]]] = [
                 sort_col="created_at",
             ),
             table(
-                "Правила (alert_rules)",
+                "Rules (alert_rules)",
                 "SELECT rule_name, severity, rule_kind, check_interval, is_active,"
                 " created_by, created_at, last_evaluated, last_hit"
                 " FROM security_logs.alert_rules"
@@ -902,14 +902,14 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     dashboards = [
         build_dashboard(
-            "Агент: контроль действий",
+            "Agent Activity Control",
             "agent-activity-control",
             ["appsecgate", "agent"],
             DB1_ROWS,
             VARS_1,
         ),
         build_dashboard(
-            "Сырые данные из view",
+            "Raw Views Explorer",
             "raw-views-explorer",
             ["appsecgate", "explorer"],
             DB2_ROWS,

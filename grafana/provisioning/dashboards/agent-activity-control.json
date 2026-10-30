@@ -30,7 +30,7 @@
         "y": 0
       },
       "id": 1,
-      "title": "Обзор",
+      "title": "Overview",
       "type": "row"
     },
     {
@@ -94,7 +94,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Запросы",
+      "title": "Requests",
       "type": "stat",
       "id": 2
     },
@@ -159,7 +159,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Ошибки, %",
+      "title": "Errors, %",
       "type": "stat",
       "id": 3
     },
@@ -224,7 +224,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Стоимость, $",
+      "title": "Cost, $",
       "type": "stat",
       "id": 4
     },
@@ -289,7 +289,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Токены",
+      "title": "Tokens",
       "type": "stat",
       "id": 5
     },
@@ -354,7 +354,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "TTFT p95, мс",
+      "title": "TTFT p95, ms",
       "type": "stat",
       "id": 6
     },
@@ -419,7 +419,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Вызовы тулов",
+      "title": "Tool calls",
       "type": "stat",
       "id": 7
     },
@@ -484,7 +484,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Срабатывания гардрейлов",
+      "title": "Guardrail hits",
       "type": "stat",
       "id": 8
     },
@@ -553,7 +553,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Открытые инциденты",
+      "title": "Open incidents",
       "type": "stat",
       "id": 9
     },
@@ -566,7 +566,7 @@
         "y": 5
       },
       "id": 10,
-      "title": "Запросы к LLM (spend_logs_extended)",
+      "title": "LLM requests (spend_logs_extended)",
       "type": "row"
     },
     {
@@ -660,7 +660,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Запросы по статусу",
+      "title": "Requests by status",
       "type": "timeseries"
     },
     {
@@ -754,7 +754,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Стоимость по времени, $",
+      "title": "Cost over time, $",
       "type": "timeseries"
     },
     {
@@ -848,7 +848,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "TTFT p95, мс",
+      "title": "TTFT p95, ms",
       "type": "timeseries"
     },
     {
@@ -942,7 +942,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Токены: prompt/completion",
+      "title": "Tokens: prompt/completion",
       "type": "timeseries"
     },
     {
@@ -1010,7 +1010,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Запросы по модели",
+      "title": "Requests by model",
       "type": "barchart"
     },
     {
@@ -1078,7 +1078,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Ошибки по модели",
+      "title": "Errors by model",
       "type": "barchart"
     },
     {
@@ -1267,7 +1267,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Последние запросы",
+      "title": "Latest requests",
       "type": "table"
     },
     {
@@ -1279,7 +1279,7 @@
         "y": 30
       },
       "id": 18,
-      "title": "Инструменты (events_tool_calls)",
+      "title": "Tools (events_tool_calls)",
       "type": "row"
     },
     {
@@ -1373,7 +1373,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Вызовы тулов по времени",
+      "title": "Tool calls over time",
       "type": "timeseries"
     },
     {
@@ -1441,7 +1441,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Top-10 тулов",
+      "title": "Top-10 tools",
       "type": "barchart"
     },
     {
@@ -1509,7 +1509,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "По агентам (user_id)",
+      "title": "By agent (user_id)",
       "type": "barchart"
     },
     {
@@ -1674,7 +1674,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Последние вызовы тулов",
+      "title": "Latest tool calls",
       "type": "table"
     },
     {
@@ -1686,7 +1686,7 @@
         "y": 47
       },
       "id": 23,
-      "title": "Гардрейлы (events_guardrails)",
+      "title": "Guardrails (events_guardrails)",
       "type": "row"
     },
     {
@@ -1780,7 +1780,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Срабатывания по action",
+      "title": "Hits by action",
       "type": "timeseries"
     },
     {
@@ -1848,7 +1848,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Top-10 гардрейлов",
+      "title": "Top-10 guardrails",
       "type": "barchart"
     },
     {
@@ -1921,7 +1921,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Типы сущностей",
+      "title": "Entity types",
       "type": "piechart"
     },
     {
@@ -2098,7 +2098,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Последние срабатывания",
+      "title": "Latest hits",
       "type": "table"
     },
     {
@@ -2110,7 +2110,7 @@
         "y": 64
       },
       "id": 28,
-      "title": "Инциденты (alert_incidents)",
+      "title": "Incidents (alert_incidents)",
       "type": "row"
     },
     {
@@ -2204,7 +2204,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Инциденты по severity",
+      "title": "Incidents by severity",
       "type": "timeseries"
     },
     {
@@ -2272,7 +2272,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Инциденты по правилам",
+      "title": "Incidents by rule",
       "type": "barchart"
     },
     {
@@ -2437,7 +2437,7 @@
           "editorMode": "sql"
         }
       ],
-      "title": "Последние инциденты",
+      "title": "Latest incidents",
       "type": "table"
     },
     {
@@ -2449,7 +2449,7 @@
         "y": 81
       },
       "id": 32,
-      "title": "Метрики агента (Prometheus)",
+      "title": "Agent metrics (Prometheus)",
       "type": "row"
     },
     {
@@ -2511,7 +2511,7 @@
           "format": "time_series"
         }
       ],
-      "title": "Запуски Observer",
+      "title": "Observer runs",
       "type": "stat",
       "id": 33
     },
@@ -2574,7 +2574,7 @@
           "format": "time_series"
         }
       ],
-      "title": "Инциденты (всего)",
+      "title": "Incidents (total)",
       "type": "stat",
       "id": 34
     },
@@ -2637,7 +2637,7 @@
           "format": "time_series"
         }
       ],
-      "title": "FP-доля",
+      "title": "FP ratio",
       "type": "stat",
       "id": 35
     },
@@ -2700,7 +2700,7 @@
           "format": "time_series"
         }
       ],
-      "title": "Активы (created)",
+      "title": "Assets (created)",
       "type": "stat",
       "id": 36
     },
@@ -2763,7 +2763,7 @@
           "format": "time_series"
         }
       ],
-      "title": "MCP-тулы (created)",
+      "title": "MCP tools (created)",
       "type": "stat",
       "id": 37
     },
@@ -2826,7 +2826,7 @@
           "format": "time_series"
         }
       ],
-      "title": "Правила (promoted)",
+      "title": "Rules (promoted)",
       "type": "stat",
       "id": 38
     },
@@ -2889,7 +2889,7 @@
           "format": "time_series"
         }
       ],
-      "title": "Активы (promoted)",
+      "title": "Assets (promoted)",
       "type": "stat",
       "id": 39
     },
@@ -2952,7 +2952,7 @@
           "format": "time_series"
         }
       ],
-      "title": "Вызовы без декларации",
+      "title": "Calls without declaration",
       "type": "stat",
       "id": 40
     }
@@ -2979,7 +2979,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Модель",
+        "label": "Model",
         "current": {
           "text": "All",
           "value": "All",
@@ -3001,7 +3001,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Агент (user_id)",
+        "label": "Agent (user_id)",
         "current": {
           "text": "All",
           "value": "All",
@@ -3023,7 +3023,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Инструмент",
+        "label": "Tool",
         "current": {
           "text": "All",
           "value": "All",
@@ -3045,7 +3045,7 @@
         "multi": false,
         "allValue": null,
         "hide": 0,
-        "label": "Гардрейл",
+        "label": "Guardrail",
         "current": {
           "text": "All",
           "value": "All",
@@ -3061,7 +3061,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Агент: контроль действий",
+  "title": "Agent Activity Control",
   "uid": "agent-activity-control",
   "version": 1,
   "weekStart": ""
