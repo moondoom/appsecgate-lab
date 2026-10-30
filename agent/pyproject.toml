@@ -1,7 +1,8 @@
 [project]
 name = "appsecgate-agent"
 version = "0.1.0"
-description = "Автономный агент аудита LLM-стенда"
+description = "Observer agent for the AppSecGate Lab: normalize, correlate and propose SQL detection rules."
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "clickhouse-connect>=0.8.0",
