@@ -1,4 +1,4 @@
-"""Тесты Observer: извлечение кандидатов-активов из витрин security_logs."""
+"""Observer tests: extracting asset candidates from the security_logs views."""
 
 from agent.observer.observer import (
     extract_candidates,

@@ -1,4 +1,4 @@
-"""Тесты Validator: политика «только безопасный SELECT»."""
+"""Validator tests: the "safe SELECT only" policy."""
 
 from pathlib import Path
 
@@ -11,7 +11,7 @@ RULES_DIR = Path(__file__).resolve().parents[2] / "rules" / "static"
 
 class TestValidSql:
     def test_all_static_rules_are_valid(self) -> None:
-        """Каждое статическое правило должно проходить валидацию."""
+        """Every static rule must pass validation."""
         for rule_file in sorted(RULES_DIR.glob("*.sql")):
             query = rule_file.read_text(encoding="utf-8")
             ok, reason = validate_sql(query)
@@ -41,7 +41,7 @@ class TestValidSql:
         assert ok, reason
 
     def test_settings_clause_allowed(self) -> None:
-        """LEFT JOIN-правила используют SETTINGS join_use_nulls = 1 (анти-джоин через IS NULL)."""
+        """LEFT JOIN rules use SETTINGS join_use_nulls = 1 (anti-join via IS NULL)."""
         ok, reason = validate_sql(
             """
             SELECT e.tool_name

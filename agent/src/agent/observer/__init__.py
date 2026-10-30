@@ -1,1 +1,1 @@
-"""Observer: нормализация и обработка наблюдений."""
+"""Observer: normalization and handling of observations."""

@@ -1,4 +1,4 @@
-"""Тесты авто-промоутера активов: отбор кандидатов по гибридному режиму."""
+"""Asset auto-promoter tests: candidate selection by the hybrid approval mode."""
 
 from agent.asset_promoter import DEFAULT_THRESHOLD, filter_eligible
 

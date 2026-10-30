@@ -1,9 +1,9 @@
-"""Rule-Engine: генерирует rule_proposals через LLM (хост-LiteLLM).
+"""Rule-Engine: generates rule_proposals through the LLM (host LiteLLM).
 
-Контекст собирается из ClickHouse (инциденты, правила, активы), промпт
-уходит на ``settings.litellm_base_url`` (прокси на хосте) моделью
-``settings.agent_model``. Ответ обязан быть JSON со списком правил;
-каждое предложение проходит Validator перед записью.
+Context is collected from ClickHouse (incidents, rules, assets); the prompt is
+sent to ``settings.litellm_base_url`` (proxy on the host) using the
+``settings.agent_model`` model. The answer must be JSON with a list of rules;
+every proposal passes the Validator before being written.
 """
 
 from __future__ import annotations
@@ -33,22 +33,22 @@ _PROPOSAL_COLUMNS = [
 _LLM_TIMEOUT_SEC = 60.0
 _MAX_PROPOSALS = 3
 
-_SYSTEM_PROMPT = """Ты — Rule-Engine для SIEM-подобной системы на ClickHouse. \
-Твоя задача — предложить новые правила детекта по статистике инцидентов и инвентаря. \
-Ответь строго JSON: {"proposals": [{"rationale": str, "query": "SELECT ..."}]}.
+_SYSTEM_PROMPT = """You are a Rule-Engine for a SIEM-like system on ClickHouse. \
+Your task is to propose new detection rules based on incident statistics and inventory. \
+Answer strictly as JSON: {"proposals": [{"rationale": str, "query": "SELECT ..."}]}.
 
-Доступные таблицы (только они, с полным префиксом):
+Available tables (only these, with the full prefix):
 security_logs.audit_events, security_logs.agent_tool_calls, security_logs.assets,
 security_logs.mcp_tools, security_logs.asset_tool_bindings,
 security_logs.alert_rules, security_logs.alert_incidents.
 
-Требования к SQL:
-* один SELECT, без точки с запятой и без нескольких statement'ов;
-* всегда полностью квалифицированное имя: security_logs.<table>;
-* в SELECT обязательны 'high'|'medium'|'low' AS severity, triggered_value, context;
-* запрещены функции file/url/s3/remote/mysql и любые обращения к внешним источникам.
+SQL requirements:
+* a single SELECT, no semicolons and no multiple statements;
+* always a fully qualified name: security_logs.<table>;
+* the SELECT must include 'high'|'medium'|'low' AS severity, triggered_value, context;
+* the functions file/url/s3/remote/mysql and any access to external sources are forbidden.
 
-Пример валидного правила:
+Example of a valid rule:
 SELECT a.asset_key, 'medium' AS severity, 1 AS triggered_value,
        format('{{"host":"{}"}}', a.asset_key) AS context
 FROM security_logs.assets AS a WHERE a.last_seen < now() - INTERVAL 7 DAY"""
@@ -56,12 +56,13 @@ FROM security_logs.assets AS a WHERE a.last_seen < now() - INTERVAL 7 DAY"""
 
 def _build_prompt(context: Mapping[str, Any]) -> str:
     return (
-        "Контекст системы:\n"
-        f"- активных правил: {context['active_rules']}\n"
-        f"- инцидентов за 24ч: {context['incidents_24h']}\n"
-        f"- активов в инвентаре: {context['assets_total']}\n"
-        f"- топ severities: {context['severity_top']}\n"
-        "Предложи до 3 детект-правил по этим данным, строго по требованиям выше.\n"
+        "System context:\n"
+        f"- active rules: {context['active_rules']}\n"
+        f"- incidents in 24h: {context['incidents_24h']}\n"
+        f"- assets in inventory: {context['assets_total']}\n"
+        f"- top severities: {context['severity_top']}\n"
+        "Propose up to 3 detection rules based on this data, strictly following "
+        "the requirements above.\n"
     )
 
 
@@ -91,7 +92,7 @@ def _collect_context(reader: Client) -> dict[str, Any]:
 
 
 def _call_llm(prompt: str) -> str:
-    """Один аккуратный вызов хост-LiteLLM."""
+    """Make one careful call to the host LiteLLM."""
     url = f"{settings.litellm_base_url.rstrip('/')}/chat/completions"
     payload = {
         "model": settings.agent_model,
@@ -108,14 +109,14 @@ def _call_llm(prompt: str) -> str:
     response.raise_for_status()
     data = response.json()
     message = data["choices"][0]["message"]
-    # reasoning-модели (glm-4.7-flash через ollama) отдают текст в
-    # reasoning_content при пустом content — берём фолбэк.
+    # Reasoning models (glm-4.7-flash via ollama) put the text into
+    # reasoning_content when content is empty — fall back to it.
     content = message.get("content") or message.get("reasoning_content") or ""
     return str(content)
 
 
 def _extract_proposals(text: str) -> list[dict[str, str]]:
-    """Извлечь список предложений из JSON-ответа LLM."""
+    """Extract the list of proposals from the LLM JSON answer."""
     start, end = text.find("{"), text.rfind("}")
     if start < 0 or end <= start:
         return []
@@ -140,12 +141,12 @@ def _write_proposals(writer: Client, proposals: Sequence[dict[str, str]]) -> Non
 
 
 def run_once(reader: Client, writer: Client) -> dict[str, Any]:
-    """Один проход Rule-Engine. Возвращает счётчики и отклонения."""
+    """Run one Rule-Engine pass. Returns counters and rejections."""
     context = _collect_context(reader)
     prompt = _build_prompt(context)
     try:
         answer = _call_llm(prompt)
-    except Exception as exc:  # noqa: BLE001 — LLM недоступен — это внешний сервис
+    except Exception as exc:  # noqa: BLE001 — LLM is down — external service
         logger.error("rule_engine: LLM call failed: %s", exc)
         return {"proposals": 0, "rejected": [], "error": str(exc)}
 

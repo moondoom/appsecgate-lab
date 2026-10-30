@@ -1,4 +1,4 @@
-"""Тесты Rule-Engine: разбор JSON-ответа LLM."""
+"""Rule-Engine tests: parsing the LLM JSON answer."""
 
 import json
 
@@ -20,14 +20,14 @@ class TestExtractProposals:
 
     def test_json_embedded_in_markdown(self) -> None:
         text = (
-            "Вот правила:\n```json\n"
+            "Here are the rules:\n```json\n"
             + json.dumps({"proposals": [{"rationale": "R", "query": QUERY}]})
             + "\n```\n"
         )
         assert len(_extract_proposals(text)) == 1
 
     def test_no_json(self) -> None:
-        assert _extract_proposals("извини, ничего не нашёл") == []
+        assert _extract_proposals("sorry, nothing found") == []
 
     def test_malformed_json(self) -> None:
         assert _extract_proposals("{not valid json}") == []

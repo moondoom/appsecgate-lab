@@ -1,9 +1,9 @@
-"""Correlator: прогоняет активные periodic-правила и пишет инциденты.
+"""Correlator: runs active periodic rules and writes incidents.
 
-Читает ``alert_rules`` (reader), выполняет ``query`` каждого активного
-периодического правила, каждую строку результата превращает в
-``alert_incidents`` (promoter). Severity, triggered_value и context берутся
-из строки результата (как в статических правилах — ``'high' AS severity``).
+Reads ``alert_rules`` (reader), executes the ``query`` of each active periodic
+rule, and turns every result row into an ``alert_incidents`` entry (promoter).
+Severity, triggered_value and context come from the result row (as in static
+rules — ``'high' AS severity``).
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ def _rows_to_incidents(
     rule: Mapping[str, Any],
     rows: Sequence[Mapping[str, Any]],
 ) -> list[tuple[str, str, float, str, str]]:
-    """Сопоставить строки результата правила полям alert_incidents."""
+    """Map rule result rows to alert_incidents fields."""
     incidents: list[tuple[str, str, float, str, str]] = []
     for row in rows:
         severity = str(row.get("severity") or rule["severity"] or "medium")
@@ -47,7 +47,7 @@ def _rows_to_incidents(
 
 
 def run_once(reader: Client, promoter: Client, max_incidents: int = 100) -> dict[str, int]:
-    """Один проход Correlator. Возвращает счётчики ``rules``/``incidents``."""
+    """Run one Correlator pass. Returns ``rules``/``incidents`` counters."""
     rules = _fetch_rules(reader)
     if not rules:
         logger.info("correlator: no active periodic rules")
@@ -57,7 +57,7 @@ def run_once(reader: Client, promoter: Client, max_incidents: int = 100) -> dict
     for rule in rules:
         try:
             result = reader.query(str(rule["query"]))
-        except Exception as exc:  # noqa: BLE001 — плохое правило не валит весь цикл
+        except Exception as exc:  # noqa: BLE001 — a bad rule must not break the whole loop
             logger.warning("correlator: rule %s failed: %s", rule["rule_name"], exc)
             continue
 

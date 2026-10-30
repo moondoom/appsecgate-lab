@@ -1,4 +1,4 @@
-"""ClickHouse клиенты (reader / writer / promoter)."""
+"""ClickHouse clients (reader / writer / promoter)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from agent.config import settings
 
 
 def get_reader() -> clickhouse_connect.driver.Client:
-    """Read-only клиент для исследования логов."""
+    """Read-only client for log investigation."""
     return clickhouse_connect.get_client(
         host=settings.clickhouse_host,
         user=settings.clickhouse_reader_user,
@@ -18,7 +18,7 @@ def get_reader() -> clickhouse_connect.driver.Client:
 
 
 def get_writer() -> clickhouse_connect.driver.Client:
-    """Клиент для записи в proposals и memory."""
+    """Client for writing proposals and memory."""
     return clickhouse_connect.get_client(
         host=settings.clickhouse_host,
         user=settings.clickhouse_writer_user,
@@ -28,7 +28,7 @@ def get_writer() -> clickhouse_connect.driver.Client:
 
 
 def get_promoter() -> clickhouse_connect.driver.Client:
-    """Клиент для промоушена правил."""
+    """Client for rule promotion."""
     return clickhouse_connect.get_client(
         host=settings.clickhouse_host,
         user=settings.clickhouse_promoter_user,
@@ -38,7 +38,7 @@ def get_promoter() -> clickhouse_connect.driver.Client:
 
 
 def get_asset_promoter() -> clickhouse_connect.driver.Client:
-    """Клиент для промоушена активов (INSERT только в assets)."""
+    """Client for asset promotion (INSERT only into assets)."""
     return clickhouse_connect.get_client(
         host=settings.clickhouse_host,
         user=settings.clickhouse_asset_promoter_user,

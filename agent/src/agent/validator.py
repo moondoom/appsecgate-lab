@@ -1,17 +1,17 @@
-"""Валидатор SQL-правил (безопасный SELECT).
+"""SQL rule validator (safe SELECT).
 
-Политика безопасности для всего SQL, который попадает в ``alert_rules``
-(статика из ``rules/static/`` и предложения Rule-Engine):
+Security policy for all SQL that ends up in ``alert_rules``
+(static rules from ``rules/static/`` and Rule-Engine proposals):
 
-* ровно одно выражение — никакого multi-statement (``;``);
-* только ``SELECT`` — без INSERT/UPDATE/DELETE/CREATE/ALTER/DROP/GRANT;
-* все таблицы полностью квалифицированы и лежат в whitelist:
-  ``security_logs.*`` и ``system.*``;
-* запрещены функции доступа к внешним источникам
-  (``file``/``url``/``s3``/``remote`` и аналоги в ClickHouse).
+* exactly one expression — no multi-statement (``;``);
+* only ``SELECT`` — no INSERT/UPDATE/DELETE/CREATE/ALTER/DROP/GRANT;
+* all tables are fully qualified and in the whitelist:
+  ``security_logs.*`` and ``system.*``;
+* functions accessing external sources are forbidden
+  (``file``/``url``/``s3``/``remote`` and similar in ClickHouse).
 
-Обхода нет: проверка выполняется по AST sqlglot (dialect=clickhouse),
-а не по строке.
+No bypass: validation runs on the sqlglot AST (dialect=clickhouse),
+not on the raw string.
 """
 
 from __future__ import annotations
@@ -21,10 +21,10 @@ from sqlglot import ErrorLevel, exp
 
 ALLOWED_DATABASES: frozenset[str] = frozenset(("security_logs", "system"))
 
-# Функции ClickHouse, дающие доступ к внешним источникам данных.
+# ClickHouse functions that give access to external data sources.
 BLOCKED_FUNCTIONS: frozenset[str] = frozenset(
     (
-        # файлы, URL, облачные/распределённые хранилища
+        # files, URLs, cloud/distributed storage
         "file",
         "url",
         "s3",
@@ -34,7 +34,7 @@ BLOCKED_FUNCTIONS: frozenset[str] = frozenset(
         "web",
         "remote",
         "remotesecure",
-        # внешние СУБД и очереди
+        # external DBMS and queues
         "mysql",
         "postgresql",
         "sqlite",
@@ -43,18 +43,18 @@ BLOCKED_FUNCTIONS: frozenset[str] = frozenset(
         "kafka",
         "jdbc",
         "odbc",
-        # внешние словари
+        # external dictionaries
         "dictget",
     )
 )
 
 
 def _func_name(func: exp.Func) -> str:
-    """Имя функции в нижнем регистре.
+    """Function name in lowercase.
 
-    Неизвестные sqlglot функции (а именно к ним относятся все блокируемые
-    ``file``/``url``/``s3``/... в ClickHouse) приходят как ``Anonymous``,
-    у остальных берём ключ узла (``count``, ``now``, ``format``).
+    Unknown sqlglot functions (which is exactly what all blocked
+    ``file``/``url``/``s3``/... are in ClickHouse) come through as ``Anonymous``,
+    for the rest we take the node key (``count``, ``now``, ``format``).
     """
     if isinstance(func, exp.Anonymous):
         this = func.this
@@ -68,15 +68,15 @@ _SEVERITIES = frozenset(("low", "medium", "high", "critical"))
 
 
 def extract_severity(query: str) -> str:
-    """Достать severity из ``SELECT ... AS severity`` в запросе правила.
+    """Extract severity from ``SELECT ... AS severity`` in a rule query.
 
-    Статические правила несут severity внутри SELECT (``'high' AS severity``),
-    а в ``alert_rules.rule_proposals`` отдельной колонки severity нет — берём
-    из AST. Если не нашлось — ``medium``.
+    Static rules carry severity inside the SELECT (``'high' AS severity``),
+    while ``alert_rules.rule_proposals`` has no separate severity column — we
+    take it from the AST. If not found — ``medium``.
     """
     try:
         stmt = sqlglot.parse_one(query, dialect="clickhouse", error_level=ErrorLevel.RAISE)
-    except Exception:  # noqa: BLE001 — невалидный SQL — медиум по умолчанию
+    except Exception:  # noqa: BLE001 — invalid SQL — default to medium
         return "medium"
     if not isinstance(stmt, exp.Select):
         return "medium"
@@ -89,16 +89,16 @@ def extract_severity(query: str) -> str:
 
 
 def validate_sql(query: str) -> tuple[bool, str]:
-    """Проверить SQL правила.
+    """Validate a rule SQL.
 
-    Возвращает ``(ok, reason)``: ``reason`` пустой при успехе, иначе —
-    короткая причина отклонения (``parse_error: ...``, ``multi_statement``,
+    Returns ``(ok, reason)``: ``reason`` is empty on success, otherwise a
+    short rejection reason (``parse_error: ...``, ``multi_statement``,
     ``not_select: <key>``, ``table_not_allowed: <db>.<table>``,
     ``blocked_function: <name>``).
     """
     try:
         statements = sqlglot.parse(query, dialect="clickhouse", error_level=ErrorLevel.RAISE)
-    except Exception as exc:  # noqa: BLE001 — sqlglot бросает несколько типов исключений
+    except Exception as exc:  # noqa: BLE001 — sqlglot raises several exception types
         return False, f"parse_error: {exc}"
 
     if len(statements) != 1:

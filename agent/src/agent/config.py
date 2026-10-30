@@ -1,11 +1,11 @@
-"""Конфигурация агента из переменных окружения."""
+"""Agent configuration from environment variables."""
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """Настройки агента."""
+    """Agent settings."""
 
     clickhouse_host: str = "localhost"
     clickhouse_reader_user: str = "agent_reader"
@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     clickhouse_asset_promoter_user: str = "agent_asset_promoter"
     clickhouse_asset_promoter_pass: str = Field("", alias="AGENT_ASSET_PROMOTER_PASS")
 
-    # Автопромоут активов: proposals с confidence >= порога переносятся в assets
-    # сразу (без ручного approved); ниже порога — ждут ручного одобрения.
+    # Asset autopilot: proposals with confidence >= threshold are moved to assets
+    # right away (no manual approved); below the threshold they wait for manual approval.
     asset_auto_promote_threshold: float = 0.9
 
     litellm_base_url: str = "http://localhost:4000"
@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     correlator_interval_sec: int = 60
     rule_engine_interval_sec: int = 3600
 
-    # .env лежит в корне репозитория; Makefile запускает агента из корня,
-    # но поддерживаем и запуск из agent/ («../.env»).
+    # .env lives in the repository root; the Makefile runs the agent from the root,
+    # but we also support running from agent/ («../.env»).
     model_config = {
         "env_prefix": "",
         "case_sensitive": False,

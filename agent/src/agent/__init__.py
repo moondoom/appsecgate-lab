@@ -1,1 +1,1 @@
-"""AppSecGate Agent — автономный аудит LLM-стенда."""
+"""AppSecGate Agent — autonomous audit of an LLM stack."""

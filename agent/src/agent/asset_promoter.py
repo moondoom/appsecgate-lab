@@ -1,19 +1,19 @@
-"""Авто-промоутер активов: перенос ``asset_proposals`` в ``assets``.
+"""Asset auto-promoter: moves ``asset_proposals`` into ``assets``.
 
-Права ClickHouse не позволяют агенту писать в ``assets`` напрямую
-(туда пишут только ``vector``/``otel``) — Observer создаёт ``asset_proposals``,
-а этот модуль переносит их в инвентарь через отдельного узкого пользователя
-``agent_asset_promoter`` (INSERT только на ``assets``).
+ClickHouse rights do not let the agent write into ``assets`` directly
+(only ``vector``/``otel`` write there) — the Observer creates ``asset_proposals``,
+and this module moves them into the inventory through a dedicated narrow user
+``agent_asset_promoter`` (INSERT only on ``assets``).
 
-Гибридный режим одобрения:
-* ``status='approved'``                     — ручное одобрение, переносится всегда;
-* ``status='draft'`` + ``confidence >= порог`` — автопилот (Observer ставит 0.9);
-* остальное                                 — ждёт ручного ``approved``.
+Hybrid approval mode:
+* ``status='approved'``                     — manual approval, always promoted;
+* ``status='draft'`` + ``confidence >= threshold`` — autopilot (Observer sets 0.9);
+* everything else                           — waits for a manual ``approved``.
 
-Перенос — это INSERT в ``assets``: ``ReplacingMergeTree(updated_at)`` по ключу
-``(asset_type, asset_key)`` сам схлопывает дубли и обновляет ``last_seen`` /
-``observation_count``. Затем proposal помечается ``promoted`` новой версией
-строки (та же механика, что в promote правил).
+The move is an INSERT into ``assets``: ``ReplacingMergeTree(updated_at)`` keyed by
+``(asset_type, asset_key)`` collapses duplicates and updates ``last_seen`` /
+``observation_count``. The proposal is then marked ``promoted`` via a new
+row version (same mechanics as rule promotion).
 """
 
 from __future__ import annotations
@@ -34,10 +34,10 @@ def filter_eligible(
     rows: Sequence[Mapping[str, Any]],
     threshold: float = DEFAULT_THRESHOLD,
 ) -> list[dict[str, Any]]:
-    """Отобрать proposals, готовые к переносу (чистая функция, для тестов).
+    """Select proposals ready to be promoted (pure function, for tests).
 
-    Критерий: ``action='create'`` и (``status='approved'`` либо
-    ``status='draft'`` с ``confidence >= threshold``).
+    Criterion: ``action='create'`` and (``status='approved'`` or
+    ``status='draft'`` with ``confidence >= threshold``).
     """
     eligible: list[dict[str, Any]] = []
     for row in rows:
@@ -57,7 +57,7 @@ def _build_asset_row(
     proposal: Mapping[str, Any],
     existing: Mapping[str, Any] | None,
 ) -> tuple[Any, ...]:
-    """Собрать строку для INSERT в assets; existing — текущая запись инвентаря."""
+    """Build a row for INSERT into assets; existing — the current inventory record."""
     try:
         data = json.loads(str(proposal.get("proposed_data") or "{}"))
     except ValueError:
@@ -94,7 +94,7 @@ def _build_proposal_row(
     proposal: Mapping[str, Any],
     now: datetime,
 ) -> tuple[Any, ...]:
-    """Новая версия proposal со status='promoted' (ReplacingMergeTree заменит старую)."""
+    """New proposal version with status='promoted' (ReplacingMergeTree replaces the old one)."""
     return (
         proposal["proposal_id"],
         proposal["action"],
@@ -115,9 +115,9 @@ def promote_once(
     promoter: Client,
     threshold: float = DEFAULT_THRESHOLD,
 ) -> dict[str, int]:
-    """Один проход авто-промоутера активов.
+    """Run one asset auto-promoter pass.
 
-    Возвращает счётчики: ``candidates`` (отобрано), ``promoted`` (перенесено).
+    Returns counters: ``candidates`` (selected), ``promoted`` (moved).
     """
     rows = list(
         reader.query(

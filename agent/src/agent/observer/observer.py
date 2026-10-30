@@ -1,23 +1,23 @@
-"""Observer: превращает наблюдения (витрины security_logs) в предложения по активам.
+"""Observer: turns observations (security_logs views) into asset proposals.
 
-Права пользователей ClickHouse не позволяют агенту писать в ``assets``
-(туда пишут только ``vector``/``otel``), поэтому Observer формирует
-``asset_proposals`` (action='create') через ``agent_writer``.
+ClickHouse user rights do not allow the agent to write into ``assets``
+(only ``vector``/``otel`` write there), so the Observer creates
+``asset_proposals`` (action='create') through ``agent_writer``.
 
-Источники — производные витрины из ``litellm.spend_logs``
-(см. clickhouse/init/08_derived_views.sql):
+Sources are the derived views over ``litellm.spend_logs``
+(see clickhouse/init/08_derived_views.sql):
 
-* ``security_logs.spend_logs_extended`` — 1:1 со spend_logs + вычисляемые поля;
-* ``security_logs.events_tool_calls``   — одна строка на вызов инструмента;
-* ``security_logs.events_guardrails``   — одна строка на срабатывание гардрейла.
+* ``security_logs.spend_logs_extended`` — 1:1 with spend_logs + computed fields;
+* ``security_logs.events_tool_calls``   — one row per tool call;
+* ``security_logs.events_guardrails``   — one row per guardrail firing.
 
-Из наблюдений извлекаются активы-кандидаты:
+Asset candidates are extracted from the observations:
 
-* ``external_api`` — по ``api_base``;
-* ``ai_agent``     — по ``user_id`` (кто ходит через прокси);
-* ``user``         — по ``end_user``;
-* ``tool``         — по ``tool_name`` из events_tool_calls;
-* ``guardrail``    — по ``guardrail_name`` из events_guardrails.
+* ``external_api`` — by ``api_base``;
+* ``ai_agent``     — by ``user_id`` (who goes through the proxy);
+* ``user``         — by ``end_user``;
+* ``tool``         — by ``tool_name`` from events_tool_calls;
+* ``guardrail``    — by ``guardrail_name`` from events_guardrails.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ from agent.metrics import (
 )
 from agent.observer.normalize import make_asset_key
 
-# Окно наблюдения по умолчанию: смотрим витрины за последние 30 минут.
+# Default observation window: look at the views for the last 30 minutes.
 DEFAULT_SINCE_MINUTES = 30
 
 _CONFIDENCE_CREATE = 0.9
@@ -44,7 +44,7 @@ _CONFIDENCE_CREATE = 0.9
 
 @dataclass(frozen=True)
 class AssetCandidate:
-    """Наблюдаемый актив-кандидат для предложения."""
+    """An observed asset candidate for a proposal."""
 
     asset_type: str
     asset_key: str
@@ -53,12 +53,12 @@ class AssetCandidate:
 
 
 def _normalize_api_base(api_base: str) -> str:
-    """Нормализовать api_base для ключа актива."""
+    """Normalize api_base for the asset key."""
     return api_base.rstrip("/").lower()
 
 
 def extract_candidates(rows: Sequence[Mapping[str, Any]]) -> list[AssetCandidate]:
-    """Извлечь уникальных кандидатов-активов из строк spend_logs_extended."""
+    """Extract unique asset candidates from spend_logs_extended rows."""
     candidates: dict[str, AssetCandidate] = {}
     for row in rows:
         api_base = str(row.get("api_base") or "").strip()
@@ -116,7 +116,7 @@ def extract_candidates(rows: Sequence[Mapping[str, Any]]) -> list[AssetCandidate
 
 
 def extract_tool_candidates(rows: Sequence[Mapping[str, Any]]) -> list[AssetCandidate]:
-    """Извлечь кандидатов типа ``tool`` из сгруппированных строк events_tool_calls."""
+    """Extract ``tool`` candidates from grouped events_tool_calls rows."""
     candidates: dict[str, AssetCandidate] = {}
     for row in rows:
         tool_name = str(row.get("tool_name") or "").strip()
@@ -141,7 +141,7 @@ def extract_tool_candidates(rows: Sequence[Mapping[str, Any]]) -> list[AssetCand
 
 
 def extract_guardrail_candidates(rows: Sequence[Mapping[str, Any]]) -> list[AssetCandidate]:
-    """Извлечь кандидатов типа ``guardrail`` из строк events_guardrails."""
+    """Extract ``guardrail`` candidates from events_guardrails rows."""
     candidates: dict[str, AssetCandidate] = {}
     for row in rows:
         guardrail_name = str(row.get("guardrail_name") or "").strip()
@@ -167,7 +167,7 @@ def extract_guardrail_candidates(rows: Sequence[Mapping[str, Any]]) -> list[Asse
 
 
 def _fetch_recent_rows(reader: Client, since_minutes: int) -> list[dict[str, Any]]:
-    """Прочитать свежие строки spend_logs_extended (витрина 1:1 со spend_logs)."""
+    """Read fresh spend_logs_extended rows (a 1:1 view over spend_logs)."""
     query = f"""
         SELECT timestamp, user_id, end_user, api_base, model, model_group,
                custom_llm_provider, tool_calls_count, guardrails_count,
@@ -180,7 +180,7 @@ def _fetch_recent_rows(reader: Client, since_minutes: int) -> list[dict[str, Any
 
 
 def _fetch_recent_tools(reader: Client, since_minutes: int) -> list[dict[str, Any]]:
-    """Сгруппировать вызовы инструментов из events_tool_calls за окно."""
+    """Group tool calls from events_tool_calls for the window."""
     query = f"""
         SELECT tool_name, user_id, model, uniq(request_id) AS calls
         FROM security_logs.events_tool_calls
@@ -192,7 +192,7 @@ def _fetch_recent_tools(reader: Client, since_minutes: int) -> list[dict[str, An
 
 
 def _fetch_recent_guardrails(reader: Client, since_minutes: int) -> list[dict[str, Any]]:
-    """Сгруппировать срабатывания гардрейлов из events_guardrails за окно."""
+    """Group guardrail firings from events_guardrails for the window."""
     query = f"""
         SELECT guardrail_name, guardrail_provider, guardrail_mode, action,
                uniq(request_id) AS firings
@@ -205,7 +205,7 @@ def _fetch_recent_guardrails(reader: Client, since_minutes: int) -> list[dict[st
 
 
 def _filter_new(reader: Client, candidates: Sequence[AssetCandidate]) -> list[AssetCandidate]:
-    """Оставить только кандидатов, которых нет ни в assets, ни в asset_proposals."""
+    """Keep only candidates that are in neither assets nor asset_proposals."""
     keys = [c.asset_key for c in candidates]
     if not keys:
         return []
@@ -220,7 +220,7 @@ def _filter_new(reader: Client, candidates: Sequence[AssetCandidate]) -> list[As
 
 
 def _write_proposals(writer: Client, candidates: Sequence[AssetCandidate]) -> None:
-    """Записать asset_proposals (action='create')."""
+    """Write asset_proposals (action='create')."""
     if not candidates:
         return
     rows = [
@@ -252,9 +252,9 @@ def run_once(
     writer: Client,
     since_minutes: int = DEFAULT_SINCE_MINUTES,
 ) -> dict[str, int]:
-    """Один проход Observer.
+    """Run one Observer pass.
 
-    Возвращает счётчики: ``spend_rows``, ``candidates``, ``new_proposals``.
+    Returns counters: ``spend_rows``, ``candidates``, ``new_proposals``.
     """
     observer_runs.inc()
 

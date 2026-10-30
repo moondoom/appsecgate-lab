@@ -1,13 +1,13 @@
-"""CLI для агента аудита.
+"""CLI for the audit agent.
 
-Подкоманды:
+Subcommands:
 
-* ``load-rules DIR``  — загрузить статические правила из ``DIR/*.sql`` в ``alert_rules``;
-* ``observe``         — один проход Observer (витрины security_logs -> asset_proposals);
-* ``correlate``       — один проход Correlator (правила -> alert_incidents);
-* ``propose``         — Rule-Engine: сгенерировать rule_proposals через хост-LiteLLM;
-* ``promote ID``      — промоутить approved rule_proposal в alert_rules;
-* ``serve``           — запустить планировщик (APScheduler) со всеми модулями.
+* ``load-rules DIR``  — load static rules from ``DIR/*.sql`` into ``alert_rules``;
+* ``observe``         — one Observer pass (security_logs views -> asset_proposals);
+* ``correlate``       — one Correlator pass (rules -> alert_incidents);
+* ``propose``         — Rule-Engine: generate rule_proposals via the host LiteLLM;
+* ``promote ID``      — promote an approved rule_proposal into alert_rules;
+* ``serve``           — run the scheduler (APScheduler) with all modules.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ def _setup_logging(verbose: bool = False) -> None:
 
 
 def _rule_name_from_file(path: Path) -> str:
-    """Имя правила — из первой строки-комментария файла, иначе имя файла."""
+    """Rule name — from the first comment line of the file, else the file name."""
     for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
         if stripped.startswith("--"):
@@ -46,7 +46,7 @@ def _rule_name_from_file(path: Path) -> str:
 
 
 def cmd_load_rules(args: argparse.Namespace) -> int:
-    """Загрузить статические правила из rules/static в alert_rules."""
+    """Load static rules from rules/static into alert_rules."""
     rules_dir = Path(args.dir)
     files = sorted(rules_dir.glob("*.sql"))
     if not files:
@@ -55,7 +55,7 @@ def cmd_load_rules(args: argparse.Namespace) -> int:
 
     reader, promoter = get_reader(), get_promoter()
 
-    # Идемпотентность: не перезагружаем уже существующие имена правил.
+    # Idempotency: do not reload already-existing rule names.
     names = [_rule_name_from_file(f) for f in files]
     existing: set[str] = set()
     if names:
@@ -105,7 +105,7 @@ def cmd_load_rules(args: argparse.Namespace) -> int:
 
 
 def cmd_observe(_args: argparse.Namespace) -> int:
-    """Один проход Observer."""
+    """One Observer pass."""
     from agent.observer.observer import run_once
 
     stats = run_once(get_reader(), get_writer())
@@ -114,7 +114,7 @@ def cmd_observe(_args: argparse.Namespace) -> int:
 
 
 def cmd_correlate(_args: argparse.Namespace) -> int:
-    """Один проход Correlator."""
+    """One Correlator pass."""
     from agent.correlator import run_once
 
     stats = run_once(get_reader(), get_promoter())
@@ -123,7 +123,7 @@ def cmd_correlate(_args: argparse.Namespace) -> int:
 
 
 def cmd_propose(_args: argparse.Namespace) -> int:
-    """Rule-Engine: предложить правила через хост-LiteLLM."""
+    """Rule-Engine: propose rules via the host LiteLLM."""
     from agent.rule_engine import run_once
 
     stats = run_once(get_reader(), get_writer())
@@ -135,7 +135,7 @@ def cmd_propose(_args: argparse.Namespace) -> int:
 
 
 def cmd_promote(args: argparse.Namespace) -> int:
-    """Промоутить approved rule_proposal в alert_rules."""
+    """Promote an approved rule_proposal into alert_rules."""
     reader, writer, promoter = get_reader(), get_writer(), get_promoter()
 
     proposal = next(
@@ -177,8 +177,8 @@ def cmd_promote(args: argparse.Namespace) -> int:
             "last_evaluated",
         ],
     )
-    # Отметить предложение как промоутированное: новая версия строки с тем же
-    # proposal_id (ReplacingMergeTree заменит старую по updated_at).
+    # Mark the proposal as promoted: a new row version with the same
+    # proposal_id (ReplacingMergeTree replaces the old one by updated_at).
     writer.insert(
         "security_logs.rule_proposals",
         [
@@ -211,7 +211,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
 
 
 def cmd_approve_assets(_args: argparse.Namespace) -> int:
-    """Перенести готовые asset_proposals в assets (approved + авто по порогу)."""
+    """Move ready asset_proposals into assets (approved + threshold autopilot)."""
     from agent.asset_promoter import promote_once
 
     stats = promote_once(get_reader(), get_writer(), get_asset_promoter())
@@ -220,7 +220,7 @@ def cmd_approve_assets(_args: argparse.Namespace) -> int:
 
 
 def cmd_serve(_args: argparse.Namespace) -> int:
-    """Планировщик APScheduler: observer / correlator / rule-engine по интервалам."""
+    """APScheduler scheduler: observer / correlator / rule-engine by intervals."""
     from apscheduler.schedulers.blocking import BlockingScheduler
     from prometheus_client import start_http_server
 
@@ -229,7 +229,7 @@ def cmd_serve(_args: argparse.Namespace) -> int:
     from agent.observer.observer import run_once as observe_once
     from agent.rule_engine import run_once as propose_once
 
-    # Метрики для Prometheus (порт по умолчанию 9101).
+    # Prometheus metrics (default port 9101).
     start_http_server(settings.metrics_port)
     logger.info("serve: metrics on :%d", settings.metrics_port)
 
@@ -343,7 +343,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _HANDLERS[args.command](args)
     except KeyboardInterrupt:
         return 130
-    except Exception as exc:  # noqa: BLE001 — показываем причину без трейсбека
+    except Exception as exc:  # noqa: BLE001 — show the reason without a traceback
         logger.error("%s failed: %s", args.command, exc)
         return 1
 

@@ -1,4 +1,4 @@
-"""Тесты для normalize.py."""
+"""Tests for normalize.py."""
 
 from agent.observer.normalize import (
     extract_db_key,
